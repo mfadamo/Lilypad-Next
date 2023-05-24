@@ -1,0 +1,20 @@
+{
+  "name": "just-dance-fanmade",
+  "version": "1.0.0",
+  "main": "game/game.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . just-dance-fanmade --overwrite --platform=win32 --arch=ia32 --out=./compiled"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "sass": "^1.62.1"
+  },
+  "devDependencies": {
+    "electron-packager": "^17.1.1",
+    "electron": "^23.1.1"
+  }
+}

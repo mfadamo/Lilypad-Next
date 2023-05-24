@@ -1,0 +1,48 @@
+
+@font-face {
+    font-family: "Font1";
+    src: url('assets/texture/ui/HNLTW1G.wf') format('woff');
+    src: url('assets/texture/ui/HNLTW1G.wf2') format('woff2');
+}
+@font-face {
+  font-family: "Font2";
+  src: url('assets/texture/ui/HNLTW1G65.wf') format('woff');
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #000;
+    font-family: "Font1";
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #Game[blackscreen="false"] {
+    background-image:  url(a), linear-gradient(20deg, #260a39, #0c0623, #0c0623, #1b1864);
+        background-position: 30%, center;
+        background-size: 50%, 100%;
+        animation: AnimateCosmos2 20000s linear infinite;
+    /* Add your content styling here */
+  }
+  #Game {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  @keyframes AnimateCosmos2 {
+    0% {
+        background-position: 0%, center;
+    }
+    10%,
+    90% {
+    }
+    100% {
+        background-position: -10000%, center;
+    }
+}
+

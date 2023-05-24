@@ -1,0 +1,159 @@
+.hud {
+    width: 100%;
+    height: 100%;
+    display: inline!important;
+}
+#in-game-video{
+    position: absolute;
+    z-index: 0;
+    width: 100%;
+     height: 100%;
+     background-size: 100%;
+}
+.videoplayer {
+     width: 100%;
+     height: 100%;
+}
+#debugger {
+    z-index: 99;
+    font-size: 0.2em;
+    color: #fff;
+    position: absolute;
+    white-space: pre-line; 
+    text-shadow: 4px 2px 2px rgba(0,0,0,0.25);
+}
+#pictos {
+    width: 30.6%;
+    height: 21%;
+    position: absolute;
+    bottom: 5.3%;
+    right: 0;
+    border-bottom: solid 2px rgba(255,255,255,0.35);
+    box-shadow: 0px 4px 2px -2px rgba(0,0,0,0.25);
+    transition: .2s all !important;
+}
+
+#lyrics {
+    width: 100%;
+    position: absolute;
+    bottom: 0.2em;
+    left: 0;
+    font-family: Font2;
+    font-size: 0.157em;
+    left: 5.1%;
+    bottom: 3.2em;
+    font-weight: normal!important;
+    letter-spacing: 0.02em;
+}
+#lyrics .line .layer-top, #lyrics .line .layer-bottom {
+    display: block;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    text-shadow: 0.045rem 0.045rem 0.04rem #00000070!important;
+    position: relative;
+}
+#lyrics .line .layer-top {
+    position: absolute;
+    display: block;
+    z-index: 99;
+    color: var(--menu-color, #fff);
+    overflow: hidden;
+    transition: width 0.2s ease;
+    white-space: nowrap;
+    transition-timing-function: linear;
+  
+}
+#lyrics .line.current,
+#lyrics .line.previous {
+    color: #d9d9d9fa;
+    opacity: 1;
+    z-index: 2;
+    transform: translateY(-101%);
+}
+#lyrics .line {
+    display: block;
+    position: absolute;
+    width: 100%;
+    color: #888;
+}
+#lyrics .line.next {
+    opacity: 1.0;
+    -webkit-animation: nextLineInf 0.28s;
+    animation: nextLineInf 0.28s!important;
+    margin-top: 0.13% !important;
+    transform: translateY(0.3em) perspective(0px) rotateX(0deg);
+}
+
+#lyrics .line.current {
+    transition: .2s all, .1s color !important;
+    opacity: 1;
+}
+
+#lyrics .line.previous {
+    transition: .28s opacity !important;
+    transition-delay: .001s!important;
+    opacity: .0;
+}
+#beat {
+    width: 30%!important;
+    height: 4.5% !important;
+    bottom: -3% !important;
+    left: -31%;
+    background: var(--menu-color, #fff);
+    border-radius: 200rem;
+    border-bottom: none;
+    opacity: 1!important;
+    visibility: visible!important;
+    display: block!important;
+    position: absolute;
+}
+#beat::after {
+    opacity: 1;
+    display: block;
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    right: 45%;
+    top: -103%;
+    border-left: .05em solid transparent;
+    border-right: .05em solid transparent;
+    border-bottom: .08em solid var(--menu-color, #fff);
+}
+
+html:not(.ipad) .hud.beat > #pictos > #beat {
+    -webkit-animation-name: BeatCoach !important;
+    animation-name: BeatCoach !important;
+}
+
+@keyframes nextLineInf {
+    0%,
+    20% {
+        opacity: 0;
+        -webkit-transform: perspective(0px) translateY(1.5em) rotateX(0deg);
+        transform: perspective(0px) translateY(1.5em) rotateX(0deg);
+    }
+    40% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+        -webkit-transform: translateY(0.3em) perspective(0px) rotateX(0deg);
+        transform: translateY(0.3em) perspective(0px) rotateX(0deg);
+    }
+}
+@keyframes BeatCoach {
+    100% {
+        opacity: 1!important;
+        transform: scale3d(1., 1, 1);
+    }
+    10% {
+        opacity: 1!important;
+        transform: scale3d(1.12, 1, 1);
+    }
+    0% {
+        opacity: 1!important;
+        transform: scale3d(1., 1, 1);
+    }
+}
