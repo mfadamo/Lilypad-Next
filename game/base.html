@@ -5,11 +5,13 @@
   <meta charset="UTF-8">
   <title>Just Dance Fanmade</title>
   <link rel="stylesheet" href="base.css">
+  <script src="library/hls.js"></script>
+  <script src="library/dash.js"></script>
   <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 </head>
 
 <body>
-  <div id="gamevar" style="--song-codename:LevanPolkka"></div>
+  <div id="gamevar" style="--song-codename:HeavyRotation"></div>
   <audio id="bkg_audio" loop src="assets/audio/ui/MainMenu_JD5.mp3"></audio>
   <div id="Game" blackscreen="true">
   </div>
@@ -47,18 +49,13 @@
     }
 
 
-  let initialWidth = 0;
-let initialHeight = 0;
+  let initialWidth = 690;
+let initialHeight = 690;
 
 function adjustGameDimensions() {
   const gameElement = document.getElementById("Game");
   const aspectRatio = 16 / 9;
   const { clientWidth, clientHeight } = document.documentElement;
-
-  if (initialWidth === 0 && initialHeight === 0) {
-    initialWidth = clientWidth;
-    initialHeight = clientHeight;
-  }
 
   if (clientWidth / clientHeight > aspectRatio) {
     const newHeight = clientHeight;

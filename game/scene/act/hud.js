@@ -103,7 +103,17 @@ function playSong(cdn, data){
         var Lyrics = data.lyrics;
         var LyricsLine = generateLineLyrics(Lyrics)
         var video = document.querySelector(".videoplayer")
-        video.src = `/LilypadData/assets/maps/${cdn}/${cdn}.mp4`
+        if(false){
+        const hls = new Hls();
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+            hls.loadSource(
+                `/LilypadData/assets/maps/${cdn}/${cdn}.m3u8`
+            );
+        });}
+        else {
+            video.src = `/LilypadData/assets/maps/${cdn}/${cdn}.mp4`
+        }
         video.play()
 
         LyricsScroll(LyricsLine[offset.lyricsLine].text)

@@ -1,7 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const url = require('url');
-const { app, ipcMain } = require('electron');
+const { ipcMain } = require('electron');
 
 let mainWindow;
 
