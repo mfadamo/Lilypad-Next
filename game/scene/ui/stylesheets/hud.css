@@ -2,6 +2,10 @@
     width: 100%;
     height: 100%;
     display: inline!important;
+    transition: opacity 0.2s;
+}
+.hud:not(.show) {
+    opacity: 0;
 }
 #in-game-video{
     position: absolute;
