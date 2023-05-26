@@ -132,12 +132,18 @@ html:not(.ipad) .hud.beat > #pictos > #beat {
 }
 .picto {
     display: block;
-    height: 1.21em;
-    width: 1.21em;
+    height: 1.36em;
+    width: 1.36em;
     left: -35.7%;
+    bottom: 0;
     filter: drop-shadow(.16rem .16rem .15rem #2020209e);
     position: absolute;
     transform-origin: bottom;
+}
+#pictos.multi-coach .picto {
+    height: 1.36em;
+    width: 1.95703125em;
+    left: -43.7%;
 }
 #pictos .picto .texture {
     width: 100%;
@@ -145,18 +151,18 @@ html:not(.ipad) .hud.beat > #pictos > #beat {
     display: block;
     transform: scale(0.99);
     text-align: center;
-}
-.hud.even #pictos .picto .texture {
-    animation: BeatPictos .3s!important;
     transform-origin: bottom;
     will-change: transform;
+}
+.hud.even #pictos .picto .texture {
+    animation: BeatPictos .4s!important;
 }
 @keyframes BeatPictos {
     0% {
         transform: scale(1);
     }
     15% {
-        transform: scale(0.975);
+        transform: scale(0.965);
     }
     100% {
         transform: scale(1.);

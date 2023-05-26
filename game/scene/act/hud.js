@@ -38,6 +38,14 @@ gfunc.generateLineLyrics = (data) => {
 
 gfunc.playSong = (cdn, data, pictoatlas) => {
     var hud = document.querySelector(".hud")
+    var ui = {
+        pictos: hud.querySelector("#pictos"),
+        lyrics: hud.querySelector("#lyrics"),
+        pictosbeat: this.lyrics.querySelector("#beat")
+    }
+    if (data.NumCoach > 0) {
+        ui.pictos.classList.add('multi-coach')
+    }
     let offset = {
         beat: 0,
         lyrics: 0,
@@ -100,31 +108,34 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
             offset.lyricsLine++;
         }
         if (songVar.Lyrics[offset.lyrics].time < songVar.currentTime) {
+            const isMore = songVar.Lyrics[offset.lyrics].isLineEnding == 1 && songVar.Lyrics[offset.lyrics + 1].time && songVar.Lyrics[offset.lyrics].time >= songVar.Lyrics[offset.lyrics + 1].time;
             document.querySelector(".currentLyricsV").innerHTML = songVar.Lyrics[offset.lyrics].text;
-            gfunc.LyricsFill(songVar.Lyrics[offset.lyrics].text, songVar.Lyrics[offset.lyrics].duration)
+            if (!isMore) gfunc.LyricsFill(songVar.Lyrics[offset.lyrics].text, songVar.Lyrics[offset.lyrics].duration)
             offset.lyrics++;
+
         }
         //Pictos
-        if (songVar.Pictos[offset.pictos].time - 2000 < songVar.currentTime) {
-            gfunc.ShowPictos(cdn, pictoatlas.images[songVar.Pictos[offset.pictos].name], 2000, 200)
+        if (songVar.Pictos[offset.pictos].time - 2500 < songVar.currentTime) {
+            gfunc.ShowPictos(cdn, pictoatlas.images[songVar.Pictos[offset.pictos].name], 2500, 200, `${pictoatlas.imageSize.width}x${pictoatlas.imageSize.height}`)
             offset.pictos++;
         }
     }, 10)
 }
 
 //Pictos Area
-gfunc.ShowPictos = (cdn, atlas, SlideDuration, DisappearDuration) => {
+gfunc.ShowPictos = (cdn, atlas, SlideDuration, DisappearDuration, size) => {
     const pictos = document.createElement('div');
     pictos.className = "picto"
     pictos.innerHTML = '<canvas class="texture"></canvas>';
     const texture = pictos.querySelector('.texture')
-    texture.width = 256;
-    texture.height = 256;
+    const width = size.split('x')
+    texture.width = width[0];
+    texture.height = width[1];
     const context = texture.getContext('2d');
     var image = new Image();
     image.src = `/LilypadData/assets/maps/${cdn}/data/assets/pictos-atlas.png`;
     image.onload = function () {
-        context.drawImage(image, atlas[0] * -1, atlas[1] * -1, this.height, this.width);
+        context.drawImage(image, atlas[0] * -1, atlas[1] * -1, this.width, this.height);
     }
     pictos.style.animation = `PictosScroll ${SlideDuration}ms linear`
 
@@ -161,6 +172,12 @@ gfunc.LyricsScroll = (Next, isHide = false) => {
 
     try {
         setTimeout(function () {
+            try {
+                //AVOID LYRIC BROKEN
+                var next = document.querySelector("#lyrics .line.next")
+                next.remove()
+            }
+            catch (err) { }
             const div = document.createElement("div");
             const txt = document.createTextNode(Next);
             const top = document.createElement("span");
