@@ -2,12 +2,22 @@ gamevar.gamevar = document.getElementById("gamevar")
 var isWalking = false
 
 gamevar.cdn = gamevar.gamevar.style.getPropertyValue("--song-codename");
-fetch(`/LilypadData/assets/maps/${gamevar.cdn}/${gamevar.cdn}.json`)
-    .then(response => response.json()).then(data => {
-        var pictosatlas;
-        fetch(`/LilypadData/assets/maps/${gamevar.cdn}/data/assets/pictos-atlas.json`)
+fetch(`${gamevar.selectedBase}/${gamevar.cdn}.json`)
+    .then(response => response.text()).then(jsona => {
+        var data;
+        try{
+            data = JSON.parse(jsona)
+        }catch(err){
+            var a = jsona.substring(gamevar.cdn.length + 1, jsona.length - 1)
+            a = a.substring(0, a.length - 2)
+            console.log(a)
+            data = JSON.parse(a)
+        }
+        fetch(`${gamevar.selectedBase}/assets/web/pictos-atlas.json`)
             .then(response => response.json()).then(pictosatlas => {
                 gfunc.playSong(gamevar.cdn, data, pictosatlas)
+            }).catch(err => {
+                gfunc.playSong(gamevar.cdn, data, {})
             })
     })
 
@@ -43,8 +53,11 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         lyrics: hud.querySelector("#lyrics"),
         pictosbeat: this.lyrics.querySelector("#beat")
     }
-    if (data.NumCoach > 0) {
+    if (data.NumCoach > 1) {
         ui.pictos.classList.add('multi-coach')
+    }
+    if(!gamevar.nohudList){
+        ui.pictos.style.display = "none"
     }
     let offset = {
         beat: 0,
@@ -58,7 +71,10 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         Lyrics: data.lyrics,
         LyricsLine: gfunc.generateLineLyrics(data.lyrics),
         Pictos: data.pictos,
-        currentTime: 0
+        currentTime: 0,
+        isDone: false,
+        PictosSlideDur: 2100 + Math.round(gfunc.calculateAverageTime(data.pictos, 'duration')),
+        PictosHideDur: 200 + (Math.round(gfunc.calculateAverageTime(data.pictos, 'duration')) / 5)
     }
     var video = document.querySelector(".videoplayer")
     if (false) {
@@ -71,7 +87,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         });
     }
     else {
-        video.src = `/LilypadData/assets/maps/${cdn}/${cdn}.mp4`
+        video.src = gamevar.selectedVideos || `/LilypadData/assets/maps/${cdn}/${cdn}.mp4`
     }
     video.play()
 
@@ -101,24 +117,39 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
             }, 15)
             offset.beat++;
         }
+        //SelfStop
+        if (songVar.Beat[songVar.Beat.length - 1] < songVar.currentTime) {
+            if (!songVar.isDone) {
+                songVar.isDone = true
+                gfunc.startTransition(true, 'scene/ui/home.html', 'scene/act/home.js', 0)
+                clearInterval(loopUI)
+                return
+            }
+        }
         // Debug Lyrics
-        if (songVar.LyricsLine[offset.lyricsLine] && songVar.LyricsLine[offset.lyricsLine].time < songVar.currentTime) {
-            document.querySelector(".currentLyricsLineV").innerHTML = songVar.LyricsLine[offset.lyricsLine].text;
-            gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine + 1] ? songVar.LyricsLine[offset.lyricsLine + 1].text : "")
-            offset.lyricsLine++;
-        }
-        if (songVar.Lyrics[offset.lyrics].time < songVar.currentTime) {
-            const isMore = songVar.Lyrics[offset.lyrics].isLineEnding == 1 && songVar.Lyrics[offset.lyrics + 1].time && songVar.Lyrics[offset.lyrics].time >= songVar.Lyrics[offset.lyrics + 1].time;
-            document.querySelector(".currentLyricsV").innerHTML = songVar.Lyrics[offset.lyrics].text;
-            if (!isMore) gfunc.LyricsFill(songVar.Lyrics[offset.lyrics].text, songVar.Lyrics[offset.lyrics].duration)
-            offset.lyrics++;
+        try {
+            if (songVar.LyricsLine[offset.lyricsLine] && songVar.LyricsLine[offset.lyricsLine].time < songVar.currentTime) {
+                document.querySelector(".currentLyricsLineV").innerHTML = songVar.LyricsLine[offset.lyricsLine].text;
+                gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine + 1] ? songVar.LyricsLine[offset.lyricsLine + 1].text : "")
+                offset.lyricsLine++;
+            }
+        } catch (err) { }
+        try {
+            if (songVar.Lyrics[offset.lyrics].time < songVar.currentTime) {
+                const isMore = songVar.Lyrics[offset.lyrics].isLineEnding == 1 && songVar.Lyrics[offset.lyrics + 1] && songVar.Lyrics[offset.lyrics].time >= songVar.Lyrics[offset.lyrics + 1].time;
+                document.querySelector(".currentLyricsV").innerHTML = songVar.Lyrics[offset.lyrics].text;
+                if (!isMore) gfunc.LyricsFill(songVar.Lyrics[offset.lyrics].text, songVar.Lyrics[offset.lyrics].duration)
+                offset.lyrics++;
 
-        }
+            }
+        } catch (err) { }
         //Pictos
-        if (songVar.Pictos[offset.pictos].time - 2500 < songVar.currentTime) {
-            gfunc.ShowPictos(cdn, pictoatlas.images[songVar.Pictos[offset.pictos].name], 2500, 200, `${pictoatlas.imageSize.width}x${pictoatlas.imageSize.height}`)
-            offset.pictos++;
-        }
+        try {
+            if (songVar.Pictos[offset.pictos].time - songVar.PictosSlideDur < songVar.currentTime) {
+                gfunc.ShowPictos(cdn, pictoatlas.images[songVar.Pictos[offset.pictos].name], songVar.PictosSlideDur, songVar.PictosHideDur, `${pictoatlas.imageSize.width}x${pictoatlas.imageSize.height}`)
+                offset.pictos++;
+            }
+        } catch (err) { }
     }, 10)
 }
 
@@ -133,7 +164,7 @@ gfunc.ShowPictos = (cdn, atlas, SlideDuration, DisappearDuration, size) => {
     texture.height = width[1];
     const context = texture.getContext('2d');
     var image = new Image();
-    image.src = `/LilypadData/assets/maps/${cdn}/data/assets/pictos-atlas.png`;
+    image.src = `${gamevar.selectedBase}/assets/web/pictos-atlas.png`;
     image.onload = function () {
         context.drawImage(image, atlas[0] * -1, atlas[1] * -1, this.width, this.height);
     }
@@ -218,5 +249,33 @@ gfunc.LyricsFill = (dat, duration, offset) => {
         console.log(dat + err)
     }
 }
+//Variable Area
+gfunc.calculateAverageTime = (array, key) => {
+    // Extract the values for the specified key from the array
+    const values = array.map(obj => obj[key]);
 
-console.log('')
+    // Calculate the sum of the values
+    const sum = values.reduce((total, value) => total + value, 0);
+
+    // Calculate the average
+    const average = sum / array.length;
+
+    return average;
+}
+
+//Keymapping Area
+gamevar.ispaused = false
+function pause(event) {
+    if (event.key === 'Escape') {
+        if (!gamevar.ispaused) {
+            setAudiobkgVol(1)
+            gamevar.ispaused = true
+            document.querySelector(".videoplayer").pause()
+        } else {
+            setAudiobkgVol(0)
+            gamevar.ispaused = false
+            document.querySelector(".videoplayer").play()
+        }
+    }
+}
+document.addEventListener('keydown', pause);

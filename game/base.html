@@ -12,84 +12,16 @@
 
 <body>
   <div id="gamevar" style="--song-codename:OnMyMind"></div>
-  <audio id="bkg_audio" loop src="assets/audio/ui/MainMenu_JD5.mp3"></audio>
-  <div id="Game" blackscreen="true">
+  <div class="audio-container">
+    <audio id="bkg_audio" loop src="assets/audio/ui/MainMenu_JD5.mp3"></audio>
   </div>
 
-  <script>
-    var bkg_audio = document.getElementById("bkg_audio");
-    const gamevar = {}
-    const gfunc = {}
+  <div id="Game" blackscreen="false">
+    <div class="sceneTransition"></div>
+    <div id="sceneDraw"></div>
+  </div>
 
-    // Function to load the 'load.html' file and apply it dynamically
-    function loadAnotherHTML(path, jspath) {
-      fetch(path)
-        .then(response => response.text())
-        .then(html => {
-          document.getElementById('Game').innerHTML = html;
-        })
-        .then(() => {
-
-          if (jspath) loadJS(jspath)
-        })
-        .catch(error => {
-          console.log('Error loading HTML:', error);
-        });
-    }
-    function loadJS(path) {
-      const oldScene = document.querySelector(".CurrentScene");
-      if (oldScene) oldScene.remove()
-      const scripts = document.createElement("script");
-      scripts.classList.add("CurrentScene")
-      scripts.src = path;
-      document.body.appendChild(scripts);
-    }
-    loadAnotherHTML('scene/ui/hud.html', 'scene/act/hud.js')
-    function setAudiobkgVol(po) {
-      var vid = document.getElementById("bkg_audio");
-      vid.volume = po;
-    }
-
-
-    let initialWidth = 690;
-    let initialHeight = 690;
-
-    function adjustGameDimensions() {
-      const gameElement = document.getElementById("Game");
-      const aspectRatio = 16 / 9;
-      const { clientWidth, clientHeight } = document.documentElement;
-
-      if (clientWidth / clientHeight > aspectRatio) {
-        const newHeight = clientHeight;
-        const newWidth = newHeight * aspectRatio;
-        adjustElementSize(newWidth, newHeight, gameElement);
-      } else {
-        const newWidth = clientWidth;
-        const newHeight = newWidth / aspectRatio;
-        adjustElementSize(newWidth, newHeight, gameElement);
-      }
-    }
-
-    function adjustElementSize(newWidth, newHeight, element) {
-      element.style.width = `${newWidth}px`;
-      element.style.height = `${newHeight}px`;
-
-      const baseFontSize = 120; // Base font size in pixels
-      const scaleFactor = Math.min(newWidth / initialWidth, newHeight / initialHeight);
-      const fontSizeInPixels = baseFontSize * scaleFactor;
-      element.style.fontSize = `${fontSizeInPixels}px`;
-    }
-
-    gfunc.getFileText = (url) => {
-      return fetch(url)
-                .then(response => response.json())
-  
-    }
-
-    window.addEventListener("resize", adjustGameDimensions);
-    window.addEventListener("load", adjustGameDimensions);
-
-  </script>
+  <script src="base.js"></script>
 </body>
 
 </html>
