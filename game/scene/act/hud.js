@@ -32,7 +32,7 @@ gfunc.generateLineLyrics = (data) => {
         if (textObj.isLineEnding === 1) {
             if (currentTime == 0) currentTime = textObj.time
             currentText += textObj.text;
-            mergedTexts.push({ text: currentText, time: currentTime });
+            mergedTexts.push({ text: currentText, time: currentTime, offset: i });
             currentText = "";
             currentTime = 0;
         } else {
@@ -76,6 +76,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         PictosSlideDur: 2100 + Math.round(gfunc.calculateAverageTime(data.pictos, 'duration')),
         PictosHideDur: 200 + (Math.round(gfunc.calculateAverageTime(data.pictos, 'duration')) / 5)
     }
+    songVar.Lyrics.push({time: songVar.Beat[songVar.Beat.length - 1] + 2000, duration: "0", text: "", isLineEnding: 0})
     var video = document.querySelector(".videoplayer")
     if (false) {
         const hls = new Hls();
@@ -91,7 +92,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
     }
     video.play()
 
-    gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine].text)
+    try { gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine].text) } catch(err){}
     var loopUI = setInterval(function () {
         songVar.currentTime = Math.round(video.currentTime * 1000);
         document.querySelector(".currentTimeV").innerHTML = songVar.currentTime;
@@ -118,7 +119,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
             offset.beat++;
         }
         //SelfStop
-        if (songVar.Beat[songVar.Beat.length - 1] < songVar.currentTime) {
+        if (songVar.Beat[songVar.Beat.length - 1] < songVar.currentTime || video.currentTime == video.duration) {
             if (!songVar.isDone) {
                 songVar.isDone = true
                 gfunc.startTransition(true, 'scene/ui/home.html', 'scene/act/home.js', 0)
@@ -128,17 +129,19 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         }
         // Debug Lyrics
         try {
-            if (songVar.LyricsLine[offset.lyricsLine] && songVar.LyricsLine[offset.lyricsLine].time < songVar.currentTime) {
-                document.querySelector(".currentLyricsLineV").innerHTML = songVar.LyricsLine[offset.lyricsLine].text;
-                gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine + 1] ? songVar.LyricsLine[offset.lyricsLine + 1].text : "")
-                offset.lyricsLine++;
-            }
-        } catch (err) { }
-        try {
             if (songVar.Lyrics[offset.lyrics].time < songVar.currentTime) {
+                try {
+                    if (songVar.LyricsLine[offset.lyricsLine] && songVar.LyricsLine[offset.lyricsLine].time < songVar.currentTime) {
+                        document.querySelector(".currentLyricsLineV").innerHTML = songVar.LyricsLine[offset.lyricsLine].text;
+                        gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine + 1] ? songVar.LyricsLine[offset.lyricsLine + 1].text : "", 0, songVar.Lyrics[songVar.LyricsLine[offset.lyricsLine].offset + 1].time - (songVar.Lyrics[songVar.LyricsLine[offset.lyricsLine].offset].time + songVar.Lyrics[songVar.LyricsLine[offset.lyricsLine].offset].duration))
+                        offset.lyricsLine++;
+                    }
+                } catch (err) { }
+                var isLineEnding = false
+                if(songVar.Lyrics[offset.lyrics].isLineEnding == 1)isLineEnding = true
                 const isMore = songVar.Lyrics[offset.lyrics].isLineEnding == 1 && songVar.Lyrics[offset.lyrics + 1] && songVar.Lyrics[offset.lyrics].time >= songVar.Lyrics[offset.lyrics + 1].time;
                 document.querySelector(".currentLyricsV").innerHTML = songVar.Lyrics[offset.lyrics].text;
-                if (!isMore) gfunc.LyricsFill(songVar.Lyrics[offset.lyrics].text, songVar.Lyrics[offset.lyrics].duration)
+                if (!isMore) gfunc.LyricsFill(songVar.Lyrics[offset.lyrics].text, songVar.Lyrics[offset.lyrics].duration, 0, isLineEnding)
                 offset.lyrics++;
 
             }
@@ -168,7 +171,9 @@ gfunc.ShowPictos = (cdn, atlas, SlideDuration, DisappearDuration, size) => {
     image.onload = function () {
         context.drawImage(image, atlas[0] * -1, atlas[1] * -1, this.width, this.height);
     }
-    pictos.style.animation = `PictosScroll ${SlideDuration}ms linear`
+    if(width[0] == width[1])pictos.style.animation = `PictosScrollSolo ${SlideDuration}ms linear`
+    else pictos.style.animation = `PictosScroll ${SlideDuration}ms linear`
+    
 
     document.querySelector('#pictos').appendChild(pictos);
     setTimeout(function () {
@@ -183,7 +188,12 @@ gfunc.ShowPictos = (cdn, atlas, SlideDuration, DisappearDuration, size) => {
 }
 
 //Lyrics Area
-gfunc.LyricsScroll = (Next, isHide = false) => {
+gfunc.LyricsScroll = (Next, isHide = false, timea) => {
+    var timeout = {
+        state: timea > 6000,
+        timeshow: timea - 1000,
+        hidetime: 2500
+    }
     var lyrics = document.querySelector("#lyrics")
 
     try {
@@ -192,13 +202,25 @@ gfunc.LyricsScroll = (Next, isHide = false) => {
     } catch (err) { }
     try {
         var current = document.querySelector("#lyrics .line.current")
-        current.classList.remove("current")
-        current.classList.add("previous")
+            current.classList.remove("current")
+            current.classList.add("previous")
     } catch (err) { }
     try {
         var next = document.querySelector("#lyrics .line.next")
         next.classList.remove("next")
         next.classList.add("current")
+        if(timeout.state){
+            next.classList.remove("next")
+            next.classList.add("current")
+            next.classList.add("show")
+            console.log(next.innerHTML + "Long")
+            setTimeout(function(){
+                next.classList.remove("show")
+            }, timeout.hidetime)
+        } else {
+            next.classList.remove("next")
+            next.classList.add("current")
+        }
     } catch (err) { }
 
     try {
@@ -220,12 +242,18 @@ gfunc.LyricsScroll = (Next, isHide = false) => {
             div.appendChild(bottom);
             div.classList.add("line");
             div.classList.add("next");
+            div.classList.add("hidden")
+            if(timeout.state){
+                setTimeout(() => {
+                    div.classList.remove("hidden")
+                }, timeout.timeshow)
+            } else div.classList.remove("hidden")
             const lyrics = document.getElementById("lyrics");
             lyrics.appendChild(div);
         }, 10)
     } catch (err) { }
 }
-gfunc.LyricsFill = (dat, duration, offset) => {
+gfunc.LyricsFill = (dat, duration, offset, Hide = false) => {
     try {
         var current = document.querySelector("#lyrics .line.current")
         var filler = current.querySelector("#lyrics .line.current .layer-top")
@@ -244,6 +272,10 @@ gfunc.LyricsFill = (dat, duration, offset) => {
             filler.style.width = '';
             filler.classList.add("filled")
             isWalking = false;
+            if(Hide){
+                current.classList.add('previous')
+                current.classList.remove('current')
+            }
         });
     } catch (err) {
         console.log(dat + err)

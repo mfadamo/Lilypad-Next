@@ -7,16 +7,15 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 800,
+    width: 1066,
     height: 600,
-    fullscreen: true,
     webPreferences: {
       nodeIntegration: true,
       sandbox: false,
     }
   });
-   const emptyMenu = Menu.buildFromTemplate([]);
-   mainWindow.setMenu(emptyMenu);
+   /*const emptyMenu = Menu.buildFromTemplate([]);
+   mainWindow.setMenu(emptyMenu);*/
 
   const mainSession = mainWindow.webContents.session;
   mainSession.webRequest.onBeforeSendHeaders({ urls: ['*://*/*'] }, (details, callback) => {

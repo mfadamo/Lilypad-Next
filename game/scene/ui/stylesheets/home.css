@@ -1,4 +1,7 @@
 /*Preview*/
+html:focus-within {
+    scroll-behavior: smooth;
+  }
  #preview {
     height: 60%;
     width: 100%;
@@ -66,6 +69,10 @@
     /* overflow: scroll; */
     box-sizing: border-box;
 }
+.itemsong.selected {
+    scroll-snap-align: start;
+    scroll-behavior: smooth;
+  }
 .songlist-container::-webkit-scrollbar{
     display: none;
   }
@@ -75,6 +82,7 @@
     overflow-x: scroll;
     overflow-y: hidden;
     white-space: nowrap;
+    scroll-snap-type: x mandatory;
 }
 .itemsong .song-title {
     color: #fff;

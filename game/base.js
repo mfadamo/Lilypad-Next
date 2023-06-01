@@ -32,7 +32,6 @@ function loadJS(path) {
   scripts.src = path;
   document.body.appendChild(scripts);
 }
-loadAnotherHTML('scene/ui/bootscreen.html', 'scene/act/bootscreen.js')
 function setAudiobkgVol(po) {
   var vid = document.getElementById("bkg_audio");
   vid.volume = po;
@@ -69,16 +68,23 @@ function adjustElementSize(newWidth, newHeight, element) {
 }
 
 gfunc.playSfx = (start, end, volume = 1) => {
-  var audio = new Audio('assets/audio/ui/sfx-sprite.mp3');
+  const audio = new Audio('assets/audio/ui/sfx-sprite.mp3');
   audio.currentTime = start / 1000;
-  audio.volume = volume
-  audio.play();
-
-  setTimeout(() => {
-    audio.pause();
-    audio.currentTime = end / 1000;
-    audio.remove();
-  }, (end - start));
+  audio.volume = volume;
+  let playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        // Schedule pausing and cleanup after the specified duration
+        setTimeout(() => {
+          audio.pause();
+          audio.remove();
+        }, end - start);
+      })
+      .catch((error) => {
+        console.error('Error playing SFX:', error);
+      });
+  }
 };
 
  gfunc.startTransition = (changeScene = false, htmlPath, jsPath, scrollTime = 1) => {
@@ -107,3 +113,4 @@ gfunc.getFileText = (url) => {
 
 window.addEventListener("resize", adjustGameDimensions);
 adjustGameDimensions()
+loadAnotherHTML('scene/ui/title.html', 'scene/act/title.js')

@@ -27,7 +27,7 @@
     text-shadow: 4px 2px 2px rgba(0,0,0,0.25);
 }
 #pictos {
-    width: 30.6%;
+    width: 19.6%;
     height: 21%;
     position: absolute;
     bottom: 5.3%;
@@ -95,15 +95,21 @@
 }
 
 #lyrics .line.previous {
-    transition: .28s opacity !important;
-    transition-delay: .001s!important;
+    transition: .07s opacity !important;
+    transition-delay: .01s!important;
     opacity: .0;
 }
+#lyrics .line.hidden {
+    visibility: hidden;
+}
+#lyrics .line.previous.show {
+    opacity: 1;
+}
 #beat {
-    width: 30%!important;
+    width: 0.86em!important;
     height: 4.5% !important;
     bottom: -3% !important;
-    left: -31%;
+    left: -0.88em;
     background: var(--menu-color, #fff);
     border-radius: 200rem;
     border-bottom: none;
@@ -132,18 +138,21 @@ html:not(.ipad) .hud.beat > #pictos > #beat {
 }
 .picto {
     display: block;
-    height: 1.36em;
-    width: 1.36em;
-    left: -35.7%;
+    height: 1.46em;
+    width: 1.46em;
+    left: -1.17em;
     bottom: 0;
     filter: drop-shadow(.16rem .16rem .15rem #2020209e);
     position: absolute;
     transform-origin: bottom;
 }
+#pictos.multi-coach {
+    width: 30.6%;
+}
 #pictos.multi-coach .picto {
     height: 1.36em;
     width: 1.95703125em;
-    left: -43.7%;
+    left: -44.7%;
 }
 #pictos .picto .texture {
     width: 100%;
@@ -171,6 +180,14 @@ html:not(.ipad) .hud.beat > #pictos > #beat {
 @keyframes PictosScroll {
     0% {
         transform: translateX(6em);
+    }
+    100% {
+        transform: translateX(0em);
+    }
+}
+@keyframes PictosScrollSolo {
+    0% {
+        transform: translateX(3.8em);
     }
     100% {
         transform: translateX(0em);
