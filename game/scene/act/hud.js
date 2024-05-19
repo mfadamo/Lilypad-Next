@@ -102,7 +102,7 @@ gfunc.generateLineLyrics = (data) => {
 
         if (textObj.isLineEnding === 1) {
             if (currentTime == 0) currentTime = textObj.time
-            currentText += `<span class="fill" offset="${i}">${textObj.text}<span class="filler" style="transition-duration:${textObj.duration}ms">${textObj.text}</span></span>`;
+            currentText += `<span class="fill" offset="${i}" style="transition-duration:${textObj.duration}ms">${textObj.text}<span class="filler" style="transition-duration:${textObj.duration}ms">${textObj.text}</span></span>`;
             mergedTexts.push({ text: currentText, time: currentTime, offset: i, even });
             currentText = "";
             currentTime = 0;
@@ -111,7 +111,8 @@ gfunc.generateLineLyrics = (data) => {
             if (currentTime === 0) {
                 currentTime = textObj.time;
             }
-            currentText += `<span class="fill" offset="${i}">${textObj.text}<span class="filler" style="transition-duration:${textObj.duration}ms">${textObj.text}</span></span>`;
+            currentText += `<span class="fill" offset="${i}" style="transition-duration:${textObj.duration}ms">${textObj.text}<span class="filler" style="transition-duration:${textObj.duration}ms">${textObj.text}</span></span>`;
+
         }
     }
     console.log(mergedTexts)
@@ -238,7 +239,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
             hud.style.setProperty("--menu-color", data.lyricsColor);
             hud.classList.remove("beat")
             setTimeout(function () {
-                
+
                 hud.classList.remove("beat")
                 hud.classList.add("beat")
                 if (songVar.Odieven == true) {
@@ -388,7 +389,7 @@ gfunc.LyricsScroll = (Next, isHide = false, timea) => {
     var timeout = {
         state: timea > 6000,
         timeshow: timea - 1000,
-        hidetime: 2500
+        hidetime: 1000
     }
     var lyrics = document.querySelector("#lyrics")
 
@@ -439,31 +440,32 @@ gfunc.LyricsScroll = (Next, isHide = false, timea) => {
             } else div.classList.remove("hidden")
             const lyrics = document.getElementById("lyrics");
             lyrics.appendChild(div);
+            document.querySelector("#beat").style.width = `${Math.round($(".line.current").width() / 1.2)}px`
         }, 10)
-    } catch (err) { console.log(err) }
+    } catch (err) { }
 }
-gfunc.LyricsFill = (dat, duration, offset, Hide = true) => {
+gfunc.LyricsFill = (dat, duration, offset, Hide = false) => {
     try {
         var current = document.querySelector("#lyrics .line.current")
-        var filler = current.querySelector(`#lyrics .line.current .fill[offset="${offset}"] .filler`)
+        var filler = current.querySelector(`#lyrics .line.current .fill[offset="${offset}"]`)
         const textNode = document.createTextNode(dat);
-        filler.parentNode.classList.add("filled")
-        function ended(event) {
-            if (event.propertyName == 'width') {
-                filler.parentNode.classList.add("done")
-                isWalking = false;
-                if (Hide) {
-                    setTimeout(function () {
-                        current.classList.add('previous')
-                        current.classList.remove('current')
-                    }, 2000)
-                }
+        filler.classList.add("filled")
+        function ended() {
+            filler.classList.add("done")
+            isWalking = false;
+            if (Hide) {
+                setTimeout(() => {
+                    current.classList.add('previous')
+                    current.classList.remove('current')
+                }, 2000)
+
+
             }
         }
-        filler.addEventListener('transitionend', ended);
+        setTimeout(ended, filler.style.transitionDuration.replace('ms', ''))
         isWalking = true;
     } catch (err) {
-
+        console.log(dat + err)
     }
 }
 //Variable Area

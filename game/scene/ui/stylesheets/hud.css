@@ -109,7 +109,6 @@
     z-index: 1;
     top: 0;
     left: 0;
-    text-shadow: 0.045em 0.045em 0.04em #00000070 !important;
     position: relative;
     will-change: width;
     float: left;
@@ -124,41 +123,57 @@
 
 
 #lyrics .line .filler {
-    width: 0;
+    text-shadow: 0.045em 0.045em 0.04em #00000070 !important;
+    width: 100%;
     overflow: hidden;
     transition: width;
     will-change: width;
     position: absolute;
-    z-index: 1;
+    z-index: -1;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
-    color: var(--menu-color, #fff);
     transition-timing-function: linear;
 
 }
 
-#lyrics .line .fill.done {
-    color: var(--menu-color, #fff);
+#lyrics .line .fill.filled {
+    background-image: linear-gradient(90deg, var(--menu-color) 100%, #ffffff00 100%);
+    background-size: 100% 100%;
+    transition: background-size linear 200ms;
+    -webkit-transition: background-size linear 200ms;
+    -moz-transition: background-size linear 200ms;
+    -ms-transition: background-size linear 200ms;
+    -o-transition: background-size linear 200ms;
 }
 
-#lyrics .line .fill.filled .filler {
-    overflow: hidden;
-    width: 100%;
-    transition-timing-function: linear;
-    backface-visibility: hidden;
-    font-weight: bold;
-    left: 0.2%;
-    top: -0.2%
+#lyrics .line .fill:not(.filled) {
+    transition: background-color 200ms !important;
+    -webkit-transition: background-color 200ms !important;
+    -moz-transition: background-color 200ms !important;
+    -ms-transition: background-color 200ms !important;
+    -o-transition: background-color 200ms !important;
 }
-#lyrics .line .fill.done .filler {
-    font-weight: normal;
+
+#lyrics .line .fill {
+    background-color: #888;
+    background-image: linear-gradient(90deg, var(--menu-color) 0%, #fff 0%);
+    background-size: 0% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-repeat: no-repeat;
+    will-change: background, background-size;
+}
+
+#lyrics .line.current .fill,
+#lyrics .line.previous .fill {
+    background-color: #d9d9d9fa;
 }
 
 #lyrics .line.current,
 #lyrics .line.previous {
-    color: #d9d9d9fa;
     opacity: 1;
     z-index: 2;
     transform: translateY(-101%);
