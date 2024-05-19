@@ -97,6 +97,7 @@ html, body {
       transform: translateX(0em);
     }
 }
+
 @keyframes fadeIn {
   0% {
       opacity: 0;

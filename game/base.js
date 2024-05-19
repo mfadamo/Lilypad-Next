@@ -67,25 +67,44 @@ function adjustElementSize(newWidth, newHeight, element) {
   element.style.fontSize = `${fontSizeInPixels}px`;
 }
 
-gfunc.playSfx = (start, end, volume = 1) => {
-  const audio = new Audio('assets/audio/ui/sfx-sprite.mp3');
-  audio.currentTime = start / 1000;
-  audio.volume = volume;
-  let playPromise = audio.play();
-  if (playPromise !== undefined) {
-    playPromise
-      .then(() => {
-        // Schedule pausing and cleanup after the specified duration
-        setTimeout(() => {
-          audio.pause();
-          audio.remove();
-        }, end - start);
-      })
-      .catch((error) => {
-        console.error('Error playing SFX:', error);
-      });
+const audioFilePromise = fetch('assets/audio/ui/sfx-sprite.mp3')
+  .then(response => response.arrayBuffer())
+  .then(buffer => new AudioContext().decodeAudioData(buffer))
+  .catch(error => {
+    console.error('Error loading or decoding audio:', error);
+  });
+
+// Play the preloaded audio file
+gfunc.playSfx = async (start, end, volume = 1) => {
+  try {
+    const audioContext = new AudioContext();
+    const audioData = await audioFilePromise;
+    const source = audioContext.createBufferSource();
+
+    source.buffer = audioData;
+    source.connect(audioContext.destination);
+
+    source.start(0, start / 1000);
+    source.stop(audioContext.currentTime + (end - start) / 1000);
+
+    source.onended = () => {
+      audioContext.close();
+    };
+
+    source.onpause = () => {
+      audioContext.close();
+    };
+
+    source.onabort = () => {
+      audioContext.close();
+    };
+
+    source.volume = volume;
+  } catch (error) {
+    console.error('Error playing SFX:', error);
   }
 };
+
 
  gfunc.startTransition = (changeScene = false, htmlPath, jsPath, scrollTime = 1) => {
 const transitionScene = document.querySelector('.sceneTransition');
@@ -113,4 +132,4 @@ gfunc.getFileText = (url) => {
 
 window.addEventListener("resize", adjustGameDimensions);
 adjustGameDimensions()
-loadAnotherHTML('scene/ui/title.html', 'scene/act/title.js')
+loadAnotherHTML('scene/ui/hud.html', 'scene/act/hud.js')

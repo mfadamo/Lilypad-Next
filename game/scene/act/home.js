@@ -40,8 +40,7 @@ function setSelectedItem(cdn, list, offset) {
         videoplayer.src = data.url
         setTimeout(() => {
             videoplayer.src = data.url
-            videoplayer.play()}, 100)
-        gamevar.preview[cdn] = data
+            videoplayer.play()}, 200)
     } else {
     fetch(`${gamevar.server.jdns}/getPreviewVideo?song=${cdn}`, {
         headers: {
@@ -49,8 +48,9 @@ function setSelectedItem(cdn, list, offset) {
         }
     }).then(response => response.json()).then(data => {
         if(!gamevar.SelectedNoHud)gamevar.selectedVideos = `https://mp4.justdancenow.com/${data.cookie.split('acl=/')[1].split('~hmac=')[0]}?hlscookie=${data.cookie}`
-        videoplayer.src = data.url
-        videoplayer.play()
+        setTimeout(() => {
+            videoplayer.src = data.url
+            videoplayer.play()}, 200)
         gamevar.preview[cdn] = data
     })
 }

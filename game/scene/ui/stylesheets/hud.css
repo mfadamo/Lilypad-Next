@@ -1,43 +1,90 @@
 .hud {
     width: 100%;
     height: 100%;
-    display: inline!important;
+    display: inline !important;
     transition: opacity 0.2s;
+    pointer-events: none
 }
+
 .hud:not(.show) {
     opacity: 0;
 }
-#in-game-video{
+
+#in-game-video {
     position: absolute;
     z-index: 0;
     width: 100%;
-     height: 100%;
-     background-size: 100%;
+    height: 100%;
+    background-size: 100%;
 }
+
 .videoplayer {
-     width: 100%;
-     height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
 }
+
+#racetrack {
+    display: block;
+    position: absolute;
+    height: 3.2em;
+    width: 0.5em;
+    bottom: 1em;
+    left: .3em;
+}
+
+#racetrack .raceline-bkg {
+    background-color: #00000051;
+    border: 0.0003em solid #ffffff51;
+    height: 100%;
+    width: 0.2em;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    border-radius: 0.05em;
+    mask: linear-gradient(to bottom, #0000, #000 30%);
+    -webkit-mask: linear-gradient(to bottom, #0000, #000 30%);
+    transition: all .2s;
+}
+
+#racetrack .player1 {
+    background-color: #6200ff;
+    height: 100%;
+    width: 0.18em;
+    bottom: 0.015em;
+    right: 0.02em;
+    position: absolute;
+    border-radius: 0.04em;
+    /* margin: 0.0205em; */
+    transition: all .5s;
+}
+
 #debugger {
     z-index: 99;
     font-size: 0.2em;
     color: #fff;
     position: absolute;
-    white-space: pre-line; 
-    text-shadow: 4px 2px 2px rgba(0,0,0,0.25);
+    white-space: pre-line;
+    text-shadow: 4px 2px 2px rgba(0, 0, 0, 0.25);
 }
+
+#debugger .filler {
+    display: none;
+}
+
 #pictos {
     width: 19.6%;
     height: 21%;
     position: absolute;
     bottom: 5.3%;
     right: 0;
-    border-bottom: solid 2px rgba(255,255,255,0.35);
-    box-shadow: 0px 4px 2px -2px rgba(0,0,0,0.25);
+    border-bottom: solid 2px rgba(255, 255, 255, 0.35);
+    box-shadow: 0px 4px 2px -2px rgba(0, 0, 0, 0.25);
     transition: .2s all !important;
 }
 
 #lyrics {
+    display: flex;
     width: 100%;
     position: absolute;
     bottom: 0.2em;
@@ -45,29 +92,70 @@
     font-family: Font2;
     font-size: 0.157em;
     left: 5.1%;
-    bottom: 3.2em;
-    font-weight: normal!important;
+    bottom: 3.4em;
+    font-weight: normal !important;
     letter-spacing: 0.02em;
+    text-align: left;
+    justify-content: left;
 }
-#lyrics .line .layer-top, #lyrics .line .layer-bottom {
-    display: block;
+
+#lyrics:has(.line.current) #beat {
+    opacity: 1;
+}
+
+#lyrics .line {
+    display: flex;
+    white-space: pre;
     z-index: 1;
     top: 0;
     left: 0;
-    text-shadow: 0.045em 0.045em 0.04em #00000070!important;
+    text-shadow: 0.045em 0.045em 0.04em #00000070 !important;
     position: relative;
+    will-change: width;
+    float: left;
 }
-#lyrics .line .layer-top {
-    position: absolute;
-    display: block;
-    z-index: 99;
-    color: var(--menu-color, #fff);
+
+#lyrics .line .fill {
+    position: relative;
+    float: left;
+    white-space: pre;
+    font-weight: normal;
+}
+
+
+#lyrics .line .filler {
+    width: 0;
     overflow: hidden;
-    transition: width 0.2s ease;
-    white-space: nowrap;
+    transition: width;
+    will-change: width;
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    color: var(--menu-color, #fff);
     transition-timing-function: linear;
-  
+
 }
+
+#lyrics .line .fill.done {
+    color: var(--menu-color, #fff);
+}
+
+#lyrics .line .fill.filled .filler {
+    overflow: hidden;
+    width: 100%;
+    transition-timing-function: linear;
+    backface-visibility: hidden;
+    font-weight: bold;
+    left: 0.2%;
+    top: -0.2%
+}
+#lyrics .line .fill.done .filler {
+    font-weight: normal;
+}
+
 #lyrics .line.current,
 #lyrics .line.previous {
     color: #d9d9d9fa;
@@ -75,16 +163,19 @@
     z-index: 2;
     transform: translateY(-101%);
 }
+
 #lyrics .line {
     display: block;
     position: absolute;
-    width: 100%;
     color: #888;
+    will-change: color, transform, opacity;
+    left: auto;
 }
+
 #lyrics .line.next {
     opacity: 1.0;
     -webkit-animation: nextLineInf 0.28s;
-    animation: nextLineInf 0.28s!important;
+    animation: nextLineInf 0.28s !important;
     margin-top: 0.13% !important;
     transform: translateY(0.3em) perspective(0px) rotateX(0deg);
 }
@@ -96,64 +187,107 @@
 
 #lyrics .line.previous {
     transition: .07s opacity !important;
-    transition-delay: .01s!important;
+    transition-delay: .01s !important;
     opacity: .0;
 }
+
 #lyrics .line.hidden {
     visibility: hidden;
 }
+
 #lyrics .line.previous.show {
     opacity: 1;
 }
+
+#lyrics.two-line .line {
+    width: 100%;
+    display: flex;
+}
+
+#lyrics.two-line #beat {
+    display: none !important;
+    opacity: 0 !important;
+}
+
+#lyrics.two-line .line[even="true"] {
+    float: left;
+    justify-content: flex-end;
+    transform: none !important;
+    right: 4em;
+    top: 1em;
+}
+
+#lyrics.two-line .line[even="false"] {
+    float: right;
+    justify-content: flex-start;
+    transform: none !important;
+    left: 4em;
+    top: -1em;
+}
+
+#lyrics.two-line {
+    font-size: 0.277em;
+}
+
+#lyrics.one-line .line.next,
+#lyrics.one-line #beat {
+    opacity: 0 !important;
+
+}
+
+#lyrics.one-line .line.current {
+    transition: opacity 0.1s, color 0.1s !important;
+}
+
+#lyrics.one-line {
+    transform: scale(1.1) translateY(2em);
+}
+
+#lyrics.no-animation * {
+    transition: none !important;
+    animation: none !important;
+}
+
 #beat {
-    width: 0.86em!important;
+    width: 0.86em !important;
     height: 4.5% !important;
     bottom: -3% !important;
     left: -0.88em;
     background: var(--menu-color, #fff);
     border-radius: 200rem;
     border-bottom: none;
-    opacity: 1!important;
-    visibility: visible!important;
-    display: block!important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
     position: absolute;
-}
-#beat::after {
-    opacity: 1;
-    display: block;
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 0;
-    right: 45%;
-    top: -103%;
-    border-left: .05em solid transparent;
-    border-right: .05em solid transparent;
-    border-bottom: .08em solid var(--menu-color, #fff);
 }
 
-html:not(.ipad) .hud.beat > #pictos > #beat {
+html:not(.ipad) .hud.beat>#pictos>#beat {
     -webkit-animation-name: BeatCoach !important;
     animation-name: BeatCoach !important;
 }
+
 .picto {
     display: block;
-    height: 1.46em;
-    width: 1.46em;
+    height: 1.56em;
+    width: 1.56em;
     left: -1.17em;
     bottom: 0;
     filter: drop-shadow(.16rem .16rem .15rem #2020209e);
     position: absolute;
     transform-origin: bottom;
 }
+
 #pictos.multi-coach {
     width: 30.6%;
 }
+
 #pictos.multi-coach .picto {
-    height: 1.36em;
-    width: 1.95703125em;
-    left: -44.7%;
+    height: 1.51em;
+    width: 2.17703125em;
+    left: -49.7%;
 }
+
 #pictos .picto .texture {
     width: 100%;
     height: 100%;
@@ -163,41 +297,51 @@ html:not(.ipad) .hud.beat > #pictos > #beat {
     transform-origin: bottom;
     will-change: transform;
 }
+
 .hud.even #pictos .picto .texture {
-    animation: BeatPictos .35s!important;
+    animation: BeatPictos .35s !important;
 }
+
 @keyframes BeatPictos {
     0% {
         transform: scale(1);
     }
+
     15% {
         transform: scale(0.945678);
     }
+
     100% {
         transform: scale(1.);
     }
 }
+
 @keyframes PictosScroll {
     0% {
-        transform: translateX(6em);
+        transform: translateX(7em);
     }
+
     100% {
         transform: translateX(0em);
     }
 }
+
 @keyframes PictosScrollSolo {
     0% {
-        transform: translateX(3.8em);
+        transform: translateX(3.9em);
     }
+
     100% {
         transform: translateX(0em);
     }
 }
+
 @keyframes PictosHide {
     0% {
         transform: scale(1);
         opacity: 1;
     }
+
     100% {
         transform: scale(1.12);
         opacity: 0;
@@ -205,32 +349,159 @@ html:not(.ipad) .hud.beat > #pictos > #beat {
 }
 
 @keyframes nextLineInf {
+
     0%,
     20% {
         opacity: 0;
         -webkit-transform: perspective(0px) translateY(1.5em) rotateX(0deg);
         transform: perspective(0px) translateY(1.5em) rotateX(0deg);
     }
+
     40% {
         opacity: 1;
     }
+
     100% {
         opacity: 1;
         -webkit-transform: translateY(0.3em) perspective(0px) rotateX(0deg);
         transform: translateY(0.3em) perspective(0px) rotateX(0deg);
     }
 }
+
 @keyframes BeatCoach {
     100% {
-        opacity: 1!important;
+        opacity: 1 !important;
         transform: scale3d(1., 1, 1);
     }
-    10% {
-        opacity: 1!important;
+
+    5% {
+        opacity: 1 !important;
         transform: scale3d(1.12, 1, 1);
     }
+
     0% {
-        opacity: 1!important;
+        opacity: 1 !important;
         transform: scale3d(1., 1, 1);
     }
+}
+
+#goldmove {
+    position: absolute;
+    z-index: 1;
+    display: block;
+    opacity: 1;
+    width: 100%;
+    height: 100%;
+}
+
+#goldmove.getReady .layer {
+    animation: getReadyGM 1.7s linear;
+}
+
+#goldmove.Explode .layer {
+    animation: ExplodeGM 1.3s linear;
+}
+
+#goldmove .layer {
+    width: 100%;
+    position: absolute;
+    height: 100%;
+    background-image: url(../../../assets/texture/ui/screen_halo.webp);
+    opacity: 0;
+    background-position: center;
+    background-size: 100% 100%;
+}
+
+#goldmove .layer-3 {
+    width: 100%;
+    height: 100%;
+    background-image: url(../../../assets/texture/ui/starfield_2.png), url(../../../assets/texture/ui/starfield_2.png);
+    background-position: center;
+
+}
+
+#goldmove.Explode .layer-3 {
+    animation: starExplode 1.5s linear;
+    opacity: 0
+}
+
+#goldmove.getReady .layer-3 {
+    animation: starjoin 2s linear;
+
+}
+
+.currentMoves0 {
+    animation: bounce .3s ease-in-out;
+    -webkit-animation: bounce .3s ease-in-out;
+}
+
+@keyframes getReadyGM {
+    0% {
+        transform: scale(1.4);
+        opacity: 0;
+    }
+
+    30% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.0);
+        opacity: 0;
+    }
+}
+
+@keyframes ExplodeGM {
+    0% {
+        transform: scale(1.3);
+        opacity: 0;
+    }
+
+    30% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.3);
+        opacity: 0;
+    }
+}
+
+@keyframes starjoin {
+    0% {
+        opacity: 1;
+        background-size: 120% 120%, 100% 100%;
+    }
+
+    100% {
+        opacity: 0;
+        background-size: 90% 90%, 80% 80%;
+    }
+}
+
+@keyframes starExplode {
+    0% {
+        opacity: 0;
+        background-size: 100% 100%, 90% 90%;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    100% {
+        background-size: 120% 120%, 150% 150%;
+    }
+}
+
+@keyframes bounce {
+    0% {
+        color: #f79000;
+}
+
+    100% {
+        color: #fff;
+}
 }

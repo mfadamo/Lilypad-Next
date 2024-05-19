@@ -1,15 +1,19 @@
 <link rel="stylesheet" href="scene/ui/stylesheets/hud.css">
 <div id="in-game-video">
-    <video class="videoplayer" src=""></video>
+    <video class="videoplayer" src="" controls></video>
 </div>
 <div class="hud" style="display: none;">
-    <div id="debugger" style="display: none;"><span class="currentTime">Current: <span class="currentTimeV"></span></span>
-        <span class="currentBeat">Current Beat: <span class="currentBeatV"></span></span>
+    <div id="debugger" style="opacity: 1;"><span class="currentTime">Current: <span class="currentTimeV"></span></span>
+        <span class="currentBeat">Current Beat: <span class="currentBeatV"></span> + <span class="OffsetNohud"></span></span>
         <span class="currentLyrics">Current Lyrics Position: <span class="currentLyricsV"></span></span>
         <span class="currentLyricsLine">Current Lyrics Line: <span class="currentLyricsLineV"></span></span>
+        <span class="currentMoves">Current Moves: <span class="currentMoves0"></span>.msm</span>
     </div>
     <div id="players"></div>
-    <div id="racetrack"></div>
+    <div id="racetrack" style="display: none;">
+        <div class="raceline-bkg"></div>
+        <div class="player1"></div>
+    </div>
     <div id="pictos">
         <div id="beat"></div>
     </div>
