@@ -9,11 +9,8 @@ function loadSong() {
 
 }
 var preview = document.querySelector('#coachselection .preview')
-preview.src = gamevar.preview || `${gamevar.selectedBase}/${gamevar.cdn}.mp4`;
-preview.currentTime = gamevar.previewCurrentTime || 0
 var bpath = (gamevar.selectedMaps && gamevar.selectedMaps.bkg_image) || `${gamevar.selectedBase}/assets/map_bkg.png`
 document.querySelector('#coachselection .banner-bkg').style.backgroundImage = `url(${bpath})`
-preview.play()
 gfunc.playSfx(11424, 12046);
 
 
@@ -573,6 +570,9 @@ document.querySelectorAll('.itempause').forEach((item, index) => {
 
 
 function startSong() {
+    const videoplayer = document.querySelector('.video--preview')
+    videoplayer.pause()
+    videoplayer.src=""
     gfunc.playSfx(0, 3000);
     document.querySelector('#coachselection .txt-loading').innerHTML = 'Loading. Please Wait...'
     document.querySelector('#coachselection .txt-loading').style.display = 'block'
@@ -582,14 +582,12 @@ function startSong() {
         setTimeout(function () {
             document.querySelector("#coachselection").style.display = "none"
             setTimeout(function () {
-                preview.pause()
-                preview.src = ""
                 var video = document.querySelector(".videoplayer")
                 video.play()
                 document.querySelector("#coachselection").style.display = "none"
             }, 600)
         }, 1500)
-    }, 1500)
+    }, 200)
 
 
 }

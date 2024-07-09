@@ -9,6 +9,9 @@ html:focus-within {
     overflow: hidden;
 }
 .video--preview {
+    display: none;
+}
+.video--preview-container {
     width: 4.19em;
     height: 2.36em;
     border-radius: 0.1em;
@@ -16,6 +19,11 @@ html:focus-within {
     position: absolute;
     bottom: 0.4em;
     left: 0.5em;
+    overflow: hidden;
+}
+.video--preview-container canvas {
+    width: 100%;
+    height: 100%;
 }
 .button--dance {
     width: 2.1em;

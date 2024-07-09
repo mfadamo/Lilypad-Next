@@ -299,11 +299,12 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     display: block;
     height: 1.35em;
     width: 1.35em;
-    left: -1.13em;
+    left: -1.12em;
     bottom: 0.03em;
     filter: drop-shadow(.16rem .14rem .01rem #0000006d);
     position: absolute;
     transform-origin: bottom;
+    background-image: radial-gradient(#fff 0%, #0000, 100%);
 }
 
 #pictos.multi-coach {
@@ -313,7 +314,8 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
 #pictos.multi-coach .picto {
     height: 1.41em;
     width: 2.07703125em;
-    left: -49.7%;
+    left: -46.5%;
+    
 }
 
 #pictos .picto .texture {

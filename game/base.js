@@ -145,7 +145,7 @@ class GradientAnimation {
     this.cnv        = document.querySelector(`#plasmaCanvas`);
     this.ctx        = this.cnv.getContext(`2d`);
 
-    this.circlesNum = 10;
+    this.circlesNum = 15;
     this.minRadius  = 400;
     this.maxRadius  = 400;
     this.speed      = .005;
