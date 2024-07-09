@@ -1,10 +1,36 @@
 <link rel="stylesheet" href="scene/ui/stylesheets/hud.css">
-<div id="in-game-video">
-    <video class="videoplayer" src="" controls></video>
+<div id="coachselection">
+    <audio class="preview" loop></audio>
+    <div class="banner-bkg"></div>
+    <div id="coach-container">
+        <div class="coach-1"></div>
+        <div class="coach-2"></div>
+        <div class="coach-3"></div>
+        <div class="coach-4"></div>
+    </div>
+    <div class="button--continue" onclick="startSong()"><span class="txt-dance">DANCE!</span></div>
+    <span class="txt-loading">Hold on, We're loading the data...</span>
+</div>
+<div id="pausescreen">
+    <span class="txt-pause">PAUSED</span>
+    <div class="list-wrapper">
+        <div class="songlist-container">
+            <div class="itempause Exit">
+                <div class="song--decoration"><img loading="lazy" src="assets/textures/ui/pause_exit.webp"></div>
+                <span class="song-title">Exit</span>
+            </div>
+            <div class="itempause Continue selected">
+                <div class="song--decoration"><img loading="lazy" src="assets/textures/ui/pause_continue.webp">
+                </div>
+                <span class="song-title">Continue</span>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="hud" style="display: none;">
-    <div id="debugger" style="opacity: 1;"><span class="currentTime">Current: <span class="currentTimeV"></span></span>
-        <span class="currentBeat">Current Beat: <span class="currentBeatV"></span> + <span class="OffsetNohud"></span></span>
+    <div id="debugger" style="opacity: 0;"><span class="currentTime">Current: <span class="currentTimeV"></span></span>
+        <span class="currentBeat">Current Beat: <span class="currentBeatV"></span> + <span
+                class="OffsetNohud"></span></span>
         <span class="currentLyrics">Current Lyrics Position: <span class="currentLyricsV"></span></span>
         <span class="currentLyricsLine">Current Lyrics Line: <span class="currentLyricsLineV"></span></span>
         <span class="currentMoves">Current Moves: <span class="currentMoves0"></span>.msm</span>
@@ -16,6 +42,7 @@
     </div>
     <div id="pictos">
         <div id="beat"></div>
+        <div id="beat-grad"></div>
     </div>
     <div id="goldmove">
         <div class="layer layer-1"></div>
@@ -23,8 +50,4 @@
         <div class="layer layer-3"></div>
     </div>
     <div id="lyrics"></div>
-</div>
-<div id="pausescreen">
-    <span class="txt-paused">Paused</span>
-    <div class="scroller"></div>
 </div>

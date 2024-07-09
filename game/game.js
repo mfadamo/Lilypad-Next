@@ -13,6 +13,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       sandbox: false,
+      backgroundThrottling: false,
     }
   });
    /*const emptyMenu = Menu.buildFromTemplate([]);

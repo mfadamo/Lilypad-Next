@@ -1,4 +1,5 @@
 var selectedSong = 0;
+dynamicbkg.drawAnimation()
 
 fetch(`${gamevar.server.api}/v1/songs/published`).then(response => response.json()).then(data => {
     let list = document.querySelector(".songlist-container");
@@ -7,13 +8,13 @@ fetch(`${gamevar.server.api}/v1/songs/published`).then(response => response.json
       let li = document.createElement("div");
       li.classList.add('itemsong')
       li.classList.add(item.id)
-      li.innerHTML = `<div class="song--decoration"><img src="${item.base}/assets/web/${item.id.toLowerCase()}_small.jpg"></img></div>
+      li.innerHTML = `<div class="song--decoration"><img loading="lazy" src="${item.base}/assets/web/${item.id.toLowerCase()}_small.jpg"></img></div>
       <span class="song-title">${item.name}</span>`;
       li.addEventListener('click', function(){
         if(selectedSong < index){
-            gfunc.playSfx(23700, 23900);
+            gfunc.playSfx(23605, 23864);
         } else {
-            gfunc.playSfx(24100, 24400);
+            gfunc.playSfx(23892, 24137);
         }
         
         document.querySelector('.itemsong.selected') && document.querySelector('.itemsong.selected').classList.remove('selected')
@@ -26,8 +27,8 @@ fetch(`${gamevar.server.api}/v1/songs/published`).then(response => response.json
 })
 
 function setSelectedItem(cdn, list, offset) {
-    console.log(offset)
     gamevar.selectedSong = offset
+    gamevar.selectedMaps = list
     selectedSong = offset
     gamevar.selectedBase = list.base
     document.querySelectorAll(`.itemsong`)[offset].classList.add('selected')
@@ -50,6 +51,7 @@ function setSelectedItem(cdn, list, offset) {
         if(!gamevar.SelectedNoHud)gamevar.selectedVideos = `https://mp4.justdancenow.com/${data.cookie.split('acl=/')[1].split('~hmac=')[0]}?hlscookie=${data.cookie}`
         setTimeout(() => {
             videoplayer.src = data.url
+            gamevar.preview = data.url
             videoplayer.play()}, 200)
         gamevar.preview[cdn] = data
     })
@@ -58,7 +60,16 @@ function setSelectedItem(cdn, list, offset) {
 function startsWithNumber(str) {
     return /^\d/.test(str);
   }
-function dance() {
-    gfunc.playSfx(0, 3000);
-    gfunc.startTransition(true, 'scene/ui/hud.html', 'scene/act/hud.js')
+  function dance() {
+    if (!document.querySelector('.button--dance').classList.contains('clicked')) {
+        gfunc.playSfx(63559, 63757)
+        document.querySelector('.button--dance').classList.add('clicked')
+        document.querySelector('.itemsong.selected').classList.add('choosed')
+        setTimeout(function () {
+            const videoplayer = document.querySelector('.video--preview')
+            gamevar.previewCurrentTime = videoplayer.currentTime;
+            loadAnotherHTML('scene/ui/hud.html', 'scene/act/hud.js')
+        }, 1000)
+    }
+
 }

@@ -11,14 +11,27 @@
 </head>
 
 <body>
-  <div id="gamevar" style="--song-codename:MJBillieJean"></div>
+  <div id="gamevar" style="--song-codename:GAndB"></div>
   <div class="audio-container">
     <audio id="bkg_audio" loop src="assets/audio/ui/MainMenu_JD5.mp3"></audio>
   </div>
 
   <div id="Game" blackscreen="false">
+    <div class="background"><canvas id="plasmaCanvas"></canvas></div>
     <div class="sceneTransition"></div>
     <div id="sceneDraw"></div>
+    <div id="in-game-video">
+      <video class="videoplayer" src=""></video>
+    </div>
+    <div class="overlay-hi">
+      <span class="shortcut"></span>
+      <div class="shortcut-ui">
+        <div class="button enablevocals" onclick="pressBack()"></div>
+        <div class="button back" onclick="pressBack()"></div>
+        <div class="button settings" onclick="toggleSettings()"></div>
+        <div class="button fullscreen" onclick="toggleFullScreen()"></div>
+      </div>
+    </div>
   </div>
 
   <script src="base.js"></script>

@@ -3,7 +3,12 @@
     height: 100%;
     display: inline !important;
     transition: opacity 0.2s;
-    pointer-events: none
+    pointer-events: none;
+    z-index: 1;
+}
+
+.background {
+    display: none;
 }
 
 .hud:not(.show) {
@@ -11,17 +16,7 @@
 }
 
 #in-game-video {
-    position: absolute;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    background-size: 100%;
-}
-
-.videoplayer {
-    width: 100%;
-    height: 100%;
-    object-fit: fill;
+    opacity: 1;
 }
 
 #racetrack {
@@ -73,6 +68,7 @@
 }
 
 #pictos {
+    z-index: 3;
     width: 19.6%;
     height: 21%;
     position: absolute;
@@ -93,7 +89,7 @@
     font-size: 0.157em;
     left: 5.1%;
     bottom: 3.4em;
-    font-weight: normal !important;
+    font-weight: bolder !important;
     letter-spacing: 0.02em;
     text-align: left;
     justify-content: left;
@@ -142,18 +138,15 @@
     background-image: linear-gradient(90deg, var(--menu-color) 100%, #ffffff00 100%);
     background-size: 100% 100%;
     transition: background-size linear 200ms;
-    -webkit-transition: background-size linear 200ms;
-    -moz-transition: background-size linear 200ms;
-    -ms-transition: background-size linear 200ms;
-    -o-transition: background-size linear 200ms;
+}
+#lyrics .line.previous .fill {
+    background-image: linear-gradient(90deg, var(--menu-color) 100%, #ffffff00 100%);
+    background-size: 100% 100%;
+    transition: none!important;
 }
 
 #lyrics .line .fill:not(.filled) {
     transition: background-color 200ms !important;
-    -webkit-transition: background-color 200ms !important;
-    -moz-transition: background-color 200ms !important;
-    -ms-transition: background-color 200ms !important;
-    -o-transition: background-color 200ms !important;
 }
 
 #lyrics .line .fill {
@@ -277,18 +270,38 @@
     position: absolute;
 }
 
+#beat-grad {
+    width: 0.86em !important;
+    height: 100% !important;
+    bottom: -3% !important;
+    left: -0.88em;
+    background: linear-gradient(to bottom, #0000, var(--menu-color, #fff) 90%);
+    border-radius: 0rem;
+    border-bottom: none;
+    opacity: .5;
+    visibility: visible !important;
+    display: block !important;
+    position: absolute;
+    transform: scaleX(0.95);
+    animation-timing-function: linear;
+}
+
 html:not(.ipad) .hud.beat>#pictos>#beat {
     -webkit-animation-name: BeatCoach !important;
     animation-name: BeatCoach !important;
 }
 
+html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
+    animation-name: BeatCoachFade;
+}
+
 .picto {
     display: block;
-    height: 1.56em;
-    width: 1.56em;
-    left: -1.17em;
-    bottom: 0;
-    filter: drop-shadow(.16rem .16rem .15rem #2020209e);
+    height: 1.35em;
+    width: 1.35em;
+    left: -1.13em;
+    bottom: 0.03em;
+    filter: drop-shadow(.16rem .14rem .01rem #0000006d);
     position: absolute;
     transform-origin: bottom;
 }
@@ -298,8 +311,8 @@ html:not(.ipad) .hud.beat>#pictos>#beat {
 }
 
 #pictos.multi-coach .picto {
-    height: 1.51em;
-    width: 2.17703125em;
+    height: 1.41em;
+    width: 2.07703125em;
     left: -49.7%;
 }
 
@@ -333,7 +346,7 @@ html:not(.ipad) .hud.beat>#pictos>#beat {
 
 @keyframes PictosScroll {
     0% {
-        transform: translateX(7em);
+        transform: translateX(4.7em);
     }
 
     100% {
@@ -368,8 +381,7 @@ html:not(.ipad) .hud.beat>#pictos>#beat {
     0%,
     20% {
         opacity: 0;
-        -webkit-transform: perspective(0px) translateY(1.5em) rotateX(0deg);
-        transform: perspective(0px) translateY(1.5em) rotateX(0deg);
+        transform: translateY(1.3em);
     }
 
     40% {
@@ -378,8 +390,7 @@ html:not(.ipad) .hud.beat>#pictos>#beat {
 
     100% {
         opacity: 1;
-        -webkit-transform: translateY(0.3em) perspective(0px) rotateX(0deg);
-        transform: translateY(0.3em) perspective(0px) rotateX(0deg);
+        transform: translateY(0.3em);
     }
 }
 
@@ -397,6 +408,20 @@ html:not(.ipad) .hud.beat>#pictos>#beat {
     0% {
         opacity: 1 !important;
         transform: scale3d(1., 1, 1);
+    }
+}
+
+@keyframes BeatCoachFade {
+    100% {
+        opacity: .5;
+    }
+
+    5% {
+        opacity: 1;
+    }
+
+    0% {
+        opacity: .5;
     }
 }
 
@@ -514,9 +539,196 @@ html:not(.ipad) .hud.beat>#pictos>#beat {
 @keyframes bounce {
     0% {
         color: #f79000;
-}
+    }
 
     100% {
         color: #fff;
+    }
 }
+
+/* PAUSESCREEN */
+#pausescreen {
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 4;
+    position: absolute;
+    background-color: #111111de;
+    color: #fff;
+    -webkit-animation: FadeIn .5s;
+    animation: FadeIn .5s;
+}
+
+.txt-pause {
+    font-size: 0.33em;
+    width: 100%;
+    display: block;
+    position: absolute;
+    left: auto;
+    right: auto;
+    text-align: center;
+    top: 3em;
+}
+
+.itempause {
+    width: 1.4em;
+    height: 1.8em;
+    top: 0;
+    display: inline-block;
+    transform: scale(0.8);
+}
+
+.song--decoration {
+    width: 100%;
+    height: 80%;
+    padding: 0.09em;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.list-wrapper {
+    top: 38%;
+    width: 100%;
+    height: 40%;
+    display: block;
+    position: relative;
+    /* overflow: scroll; */
+    box-sizing: border-box;
+}
+
+.itempause.selected {
+    scroll-snap-align: start;
+    scroll-behavior: smooth;
+}
+
+.songlist-container::-webkit-scrollbar {
+    display: none;
+}
+
+.songlist-container {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -ms-scroll-snap-type: x mandatory;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    justify-content: center;
+}
+
+.itempause .song-title {
+    color: #fff;
+    width: 100%;
+    font-size: 0.17em;
+    position: relative;
+    padding-left: 0.6em;
+    padding-right: 0.6em;
+    z-index: 3;
+    display: block;
+    box-sizing: border-box;
+    white-space: nowrap;
+    text-overflow: clip;
+    overflow: hidden
+}
+
+.itempause img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0.13em;
+    -o-object-fit: cover;
+    object-fit: cover;
+    overflow: hidden;
+    background-color: #00000073;
+}
+
+.itempause .song--decoration::after {
+    content: '';
+    width: 92%;
+    height: 92.4%;
+    position: absolute;
+    border: 0.03em solid rgb(0, 98, 255);
+    border-radius: 0.2em;
+    display: block;
+    z-index: 1;
+    top: 2%;
+    left: 2%;
+    transition: opacity .2s, transform .2s .2s;
+    transform: scale(1.1);
+    opacity: 0;
+    will-change: transform, opacity, border;
+    -webkit-transition: opacity .2s, transform .2s .2s;
+    -moz-transition: opacity .2s, transform .2s .2s;
+    -ms-transition: opacity .2s, transform .2s .2s;
+    -o-transition: opacity .2s, transform .2s .2s;
+}
+
+.itempause.exit .song--decoration::after {
+    color: red
+}
+
+.itempause.choosed .song--decoration::after {
+    -webkit-animation: selectedbounce 1s;
+    animation: selectedbounce 1s;
+    border: 0.03em solid #0eaedf;
+}
+
+.itempause.selected .song--decoration::after {
+    opacity: 1;
+    transform: none;
+    transition: all .2s;
+    -webkit-transition: all .2s;
+    -moz-transition: all .2s;
+    -ms-transition: all .2s;
+    -o-transition: all .2s;
+}
+
+
+#coachselection {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 4;
+    background-image: url(../../../assets/texture/ui/jdbg.png);
+    background-size: 100% 100%;
+}
+
+#coachselection .banner-bkg {
+    width: calc(100% - 0.1em);
+    height: 83%;
+    background: linear-gradient(to bottom, #00000051, #ffffffcc, #00000051);
+    margin: 0.05em;
+    box-sizing: border-box;
+    border-radius: 0.1em;
+    background-size: cover;
+    background-color: #000;
+}
+
+#coachselection .button--continue {
+        width: 4em;
+        height: 0.9em;
+        overflow: hidden;
+        background: blue;
+        color: #fff;
+        font-size: 0.5em;
+        text-align: center;
+        position: absolute;
+        display: flex;
+        border-radius: 1em;
+        bottom: 3.6%;
+        right: 4%;
+        align-items: center;
+        justify-content: center;
+        display: none;
+}
+#coachselection .txt-dance {
+    font-size: 0.4em;
+}
+#coachselection .txt-loading {
+    font-size: 0.16em;
+    position: absolute;
+    right: 10%;
+    bottom: 6%;
+    font-family: 'Font1';
+    color: lightblue;
 }
