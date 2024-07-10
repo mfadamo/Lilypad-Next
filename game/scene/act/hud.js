@@ -2,6 +2,7 @@ gamevar.gamevar = document.getElementById("gamevar")
 var isWalking = false
 var selectedPause = 1
 gamevar.isPaused = false
+gamevar.isOnCoachSelection = true
 if (gamevar.selectedBase == undefined) gamevar.selectedBase = `/LilypadData/maps/${gamevar.gamevar.style.getPropertyValue("--song-codename")}/`
 
 gamevar.cdn = gamevar.gamevar.style.getPropertyValue("--song-codename");
@@ -188,10 +189,12 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
     }
     video.oncanplay = (event) => {
         setTimeout(function () {
-            gfunc.playSfx(29139, 29600);
-            document.querySelector('#coachselection .txt-loading').style.display = 'none'
-            document.querySelector('#coachselection .button--continue').style.display = 'flex'
-        })
+            if (gamevar.isOnCoachSelection) {
+                gfunc.playSfx(29139, 29600);
+                document.querySelector('#coachselection .txt-loading').style.display = 'none'
+                document.querySelector('#coachselection .button--continue').style.display = 'flex'
+            }
+        }, 3000)
     };
 
     function findClosestBelow(value, array) {
@@ -502,7 +505,7 @@ gfunc.LyricsFill = (dat, duration, offset, Hide = false) => {
         setTimeout(ended, filler.style.transitionDuration.replace('ms', ''))
         isWalking = true;
         //Fix lyrics gone wrong on JDN Files (ex. Good4U)
-        var prevFiller = current.querySelector(`#lyrics .line .fill[offset="${offset-1}"]`)
+        var prevFiller = current.querySelector(`#lyrics .line .fill[offset="${offset - 1}"]`)
         prevFiller.style.transitionDuration = '0ms'
         prevFiller.style.transition = 'none'
     } catch (err) {
@@ -570,14 +573,16 @@ document.querySelectorAll('.itempause').forEach((item, index) => {
 
 
 function startSong() {
-    const videoplayer = document.querySelector('.video--preview')
-    videoplayer.pause()
-    videoplayer.src=""
-    gfunc.playSfx(0, 3000);
+    gfunc.playSfx(11424, 12046);
     document.querySelector('#coachselection .txt-loading').innerHTML = 'Loading. Please Wait...'
     document.querySelector('#coachselection .txt-loading').style.display = 'block'
     document.querySelector('#coachselection .button--continue').style.display = 'none'
+    gamevar.isOnCoachSelection = false
     setTimeout(function () {
+        const videoplayer = document.querySelector('.video--preview')
+        videoplayer.pause()
+        videoplayer.src = ""
+        gfunc.playSfx(0, 3000);
         gfunc.startTransition(false, 'scene/ui/hud.html', 'scene/act/hud.js')
         setTimeout(function () {
             document.querySelector("#coachselection").style.display = "none"
@@ -587,7 +592,7 @@ function startSong() {
                 document.querySelector("#coachselection").style.display = "none"
             }, 600)
         }, 1500)
-    }, 200)
+    }, 1000)
 
 
 }

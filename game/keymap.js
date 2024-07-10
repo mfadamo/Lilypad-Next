@@ -16,7 +16,11 @@ var keytask = {
             document.querySelector('#play').click()
         }
         if (getState() == 'hud') {
+            if (gamevar.isOnCoachSelection){
+                document.querySelector('.button--continue').click()
+            } else {
             if (gamevar.isPaused) document.querySelector('.selected').click()
+            }
         }
     },
     arrowLeft: (event) => {
