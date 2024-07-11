@@ -1,24 +1,32 @@
-gamevar.gamevar = document.getElementById("gamevar")
-var isWalking = false
-var selectedPause = 1
-gamevar.isPaused = false
-gamevar.isOnCoachSelection = true
-if (gamevar.selectedBase == undefined) gamevar.selectedBase = `/LilypadData/maps/${gamevar.gamevar.style.getPropertyValue("--song-codename")}/`
-
-gamevar.cdn = gamevar.gamevar.style.getPropertyValue("--song-codename");
-function loadSong() {
-
+// Initialize game variables
+var map = document.getElementById("gamevar");
+var isWalking = false;
+var selectedPause = 1;
+gamevar.isPaused = false;
+gamevar.isOnCoachSelection = true;
+if (gamevar.selectedBase === undefined) {
+    gamevar.selectedBase = `/LilypadData/maps/${map.style.getPropertyValue("--song-codename")}/`;
 }
-var preview = document.querySelector('#coachselection .preview')
-var bpath = (gamevar.selectedMaps && gamevar.selectedMaps.bkg_image) || `${gamevar.selectedBase}/assets/map_bkg.png`
-document.querySelector('#coachselection .banner-bkg').style.backgroundImage = `url(${bpath})`
+gamevar.cdn = map.style.getPropertyValue("--song-codename");
+
+
+// Set background image for coach selection
+var preview = document.querySelector('#coachselection .preview');
+var bpath = (gamevar.selectedMaps && gamevar.selectedMaps.bkg_image) || `${gamevar.selectedBase}/assets/map_bkg.png`;
+document.querySelector('#coachselection .banner-bkg').style.backgroundImage = `url(${bpath})`;
+
+// Play sound effect
 gfunc.playSfx(11424, 12046);
 
 
 
-async function loadMoves(MovesNumber = "Moves0") {
+async function loadMoves(MovesNumber = "moves0") {
     try {
-        const response = await fetch(`${gamevar.selectedBase}/${gamevar.cdn}_${MovesNumber}.json`);
+        var fetchUrl = `${gamevar.selectedBase}/${gamevar.cdn}_${MovesNumber}.json`
+        if (fetchUrl.includes('justdancenow.com')) {
+            fetchUrl = fetchUrl.replace('assets/web', 'data/moves')
+        }
+        const response = await fetch(fetchUrl);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -27,16 +35,16 @@ async function loadMoves(MovesNumber = "Moves0") {
         try {
             data.moves0 = JSON.parse(jsona);
         } catch (err) {
-            var a = jsona.substring(gamevar.cdn.length + 2, jsona.length - 1);
+            var a = jsona.substring(gamevar.cdn.length + 2, jsona.lastIndexOf(')'));
             data = JSON.parse(a, a.length - 1);
         }
         return data || [];
     } catch (err) {
-        console.error('Error loading moves:', err);
         return [];
     }
 }
 
+// Fetch song data and play the song
 async function fetchDataAndPlaySong() {
     try {
         const response = await fetch(`${gamevar.selectedBase}/${gamevar.cdn}.json`);
@@ -44,18 +52,27 @@ async function fetchDataAndPlaySong() {
             throw new Error('Network response was not ok');
         }
         const jsona = await response.text();
-        var data;
+        let data;
         try {
             data = JSON.parse(jsona);
         } catch (err) {
-            var a = jsona.substring(gamevar.cdn.length + 1, jsona.length - 1);
-            a = a.slice(0, a.length - 2);
-            data = JSON.parse(a, a.length - 1);
+            let a = jsona.substring(gamevar.cdn.length + 1, jsona.lastIndexOf(')'));
+            try {
+            data = JSON.parse(a);
+            } catch(err){
+                console.log(`unable to load ${a}`)
+            }
         }
+
         if (gamevar.selectedBase.includes('https://jdnow-api-contentapistoragest.justdancenow.com')) {
-            gamevar.selectedBase = gamevar.selectedBase + "/assets/web"
+            gamevar.selectedBase += "/assets/web";
         }
-        data.moves0 = await loadMoves("Moves0");
+
+        data.moves0 = await loadMoves("moves0");
+        data.moves1 = await loadMoves("moves1");
+        data.moves2 = await loadMoves("moves2");
+        data.moves3 = await loadMoves("moves3");
+
         try {
             const pictosatlasResponse = await fetch(`${gamevar.selectedBase}/pictos-atlas.json`);
             if (!pictosatlasResponse.ok) {
@@ -66,36 +83,26 @@ async function fetchDataAndPlaySong() {
         } catch (err) {
             console.error('Error loading pictos atlas:', err);
             // Use default atlas or placeholder data
-            gfunc.playSong(gamevar.cdn, data, {
-                "NoSprite": true,
-                "imageSize": {
-                    "width": 256,
-                    "height": 256
-                },
-                "images": {
-                    "placeholder": [
-                        0,
-                        0
-                    ]
-                }
-            });
+            gfunc.playSong(gamevar.cdn, data, getDefaultAtlas());
         }
     } catch (err) {
         console.error('Error fetching data and playing song:', err);
-        gfunc.playSong(gamevar.cdn, {}, {
-            "NoSprite": true,
-            "imageSize": {
-                "width": 256,
-                "height": 256
-            },
-            "images": {
-                "placeholder": [
-                    0,
-                    0
-                ]
-            }
-        });
+        gfunc.playSong(gamevar.cdn, {}, getDefaultAtlas());
     }
+}
+
+// Get default atlas data
+function getDefaultAtlas() {
+    return {
+        "NoSprite": true,
+        "imageSize": {
+            "width": 256,
+            "height": 256
+        },
+        "images": {
+            "placeholder": [0, 0]
+        }
+    };
 }
 
 // Call fetchDataAndPlaySong to start the process
@@ -143,6 +150,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         lyrics: hud.querySelector("#lyrics"),
         pictosbeat: this.lyrics.querySelector("#beat")
     }
+     ui.pictos.setAttribute("NumCoach", data.NumCoach);
     if (data.NumCoach > 1) {
         ui.pictos.classList.add('multi-coach')
     }
@@ -156,6 +164,9 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         pictos: 0,
         goldMoves: 0,
         moves0: 0,
+        moves1: 0,
+        moves2: 0,
+        moves3: 0,
         hideUI: 0
     };
     const songVar = {
@@ -170,7 +181,10 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         PictosSlideDur: 2100 + Math.round((gfunc.calculateAverageBeatTime(data.beats))),
         PictosHideDur: 200 + ((gfunc.calculateAverageBeatTime(data.beats)) / 5),
         goldMoves: data.goldMoves || data.goldEffects || [],
-        Moves0: data.moves0,
+        Moves0: data.moves0 || [],
+        Moves1: data.moves1 || [],
+        Moves2: data.moves2 || [],
+        Moves3: data.moves3 || [],
         HideUI: data.HideUserInterface || []
     }
     songVar.Lyrics.push({ time: songVar.Beat[songVar.Beat.length - 1] + 2000, duration: "0", text: "", isLineEnding: 0 })
@@ -185,7 +199,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         });
     }
     else {
-        video.src = gamevar.selectedVideos || `${gamevar.selectedBase}/${gamevar.cdn}.mp4`
+        video.src =  gamevar.selectedVideos || `${gamevar.selectedBase}/${gamevar.cdn}.mp4`
     }
     video.oncanplay = (event) => {
         setTimeout(function () {
@@ -194,7 +208,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                 document.querySelector('#coachselection .txt-loading').style.display = 'none'
                 document.querySelector('#coachselection .button--continue').style.display = 'flex'
             }
-        }, 3000)
+        }, 1000)
     };
 
     function findClosestBelow(value, array) {
@@ -221,11 +235,10 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
     }
 
 
-
     document.querySelector(".OffsetNohud").innerHTML = songVar.nohudOffset;
     document.querySelector(".videoplayer").currentTime = songVar.nohudOffset / 1000;
     try {
-        setTimeout(function () { gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine]) }, (songVar.LyricsLine[offset.lyricsLine].time - 9000))
+        setTimeout(function () { gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine]) }, (songVar.LyricsLine[offset.lyricsLine].time - 1000))
     } catch (err) {
         console.log(err)
     }
@@ -279,13 +292,14 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                 offset.beat++;
             }
             //SelfStop
-            if ((songVar.Beat[songVar.Beat.length - 1] - songVar.gameOffset) < songVar.currentTime || video.currentTime == video.duration || video.currentTime > video.duration) {
+            if ((songVar.Beat[songVar.Beat.length - 1] + songVar.nohudOffset) < songVar.currentTime || video.currentTime == video.duration || video.currentTime > video.duration) {
                 if (!songVar.isDone) {
                     songVar.isDone = true;
                     video.removeAttribute('src');
                     video.load();
                     gfunc.startTransition(true, 'scene/ui/home.html', 'scene/act/home.js');
-                    loopUI = clearInterval(loopUI);
+                    data = {};
+                    songVar = {};
                     return;
                 }
             }
@@ -347,11 +361,48 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                     document.querySelector('#racetrack .player1').style.height = gfunc.percentage(offset.moves0, songVar.Moves0.length) + '%'
                     document.querySelector('#racetrack .raceline-bkg').style.height = (gfunc.percentage(offset.moves0, songVar.Moves0.length) / 1.3) + 15 + '%'
                     document.querySelector(".currentMoves0").innerHTML = `${songVar.Moves0[offset.moves0].time} ${songVar.Moves0[offset.moves0].name}`;
-                    var el = document.querySelector(".currentMoves0");
-                    el.style.animation = 'none';
-                    el.offsetHeight; /* trigger reflow */
-                    el.style.animation = null;
+                    setTimeout(function () {
+                        //BOT RACELINE
+                        var el = document.querySelector(".currentMoves0");
+                        el.style.animation = 'none';
+                        el.offsetHeight; /* trigger reflow */
+                        el.style.animation = null;
+                        //BOT PLAYERS
+                        var feedbackname = ".feedback-perfect"
+                        if (songVar.Moves0[offset.moves0-1].goldMove) { feedbackname = ".feedback-yeah" }
+                        var player = document.querySelector('#players .player1')
+                        var perfect = player.querySelector(feedbackname);
+                        perfect.classList.remove('animate');
+                        perfect.offsetHeight; /* trigger reflow */
+                        perfect.classList.add('animate');
+                    }, songVar.Moves0[offset.moves0].duration)
                     offset.moves0++;
+                }
+                if (songVar.Moves0[offset.moves0].time + songVar.Moves0[offset.moves0].duration + songVar.nohudOffset < songVar.currentTime) {
+                    document.querySelector(".currentMoves0").innerHTML = "idle";
+                }
+            } catch (err) { }
+            ////Moves1
+            try {
+                if (songVar.Moves1[offset.moves1].time + songVar.nohudOffset < songVar.currentTime) {
+                    document.querySelector('#racetrack .player2').style.height = gfunc.percentage(offset.moves1, songVar.Moves1.length) + '%'
+                    document.querySelector(".currentMoves1").innerHTML = `${songVar.Moves0[offset.moves0].time} ${songVar.Moves0[offset.moves0].name}`;
+                    setTimeout(function () {
+                        //BOT RACELINE
+                        var el = document.querySelector(".currentMoves1");
+                        el.style.animation = 'none';
+                        el.offsetHeight; /* trigger reflow */
+                        el.style.animation = null;
+                        //BOT PLAYERS
+                        var feedbackname = ".feedback-perfect"
+                        if (songVar.Moves1[offset.moves1-1].goldMove) { feedbackname = ".feedback-yeah" }
+                        var player = document.querySelector('#players .player2')
+                        var perfect = player.querySelector(feedbackname);
+                        perfect.classList.remove('animate');
+                        perfect.offsetHeight; /* trigger reflow */
+                        perfect.classList.add('animate');
+                    }, songVar.Moves1[offset.moves1].duration)
+                    offset.moves1++;
                 }
                 if (songVar.Moves0[offset.moves0].time + songVar.Moves0[offset.moves0].duration + songVar.nohudOffset < songVar.currentTime) {
                     document.querySelector(".currentMoves0").innerHTML = "idle";
@@ -497,7 +548,7 @@ gfunc.LyricsFill = (dat, duration, offset, Hide = false) => {
                 setTimeout(() => {
                     current.classList.add('previous')
                     current.classList.remove('current')
-                }, 2000)
+                }, 1000)
 
 
             }
@@ -556,7 +607,10 @@ document.querySelectorAll('.itempause').forEach((item, index) => {
         if (selectedPause == index) {
             setTimeout(() => {
                 if (index == 0) {
-                    document.querySelector('.videoplayer').currentTime = document.querySelector('.videoplayer').duration || document.querySelector('.videoplayer').currentTime + 200000000000
+                    var video = document.querySelector('.videoplayer')
+                    video.removeAttribute('src');
+                    video.load();
+                    gfunc.startTransition(true, 'scene/ui/home.html', 'scene/act/home.js');
                 }
                 if (index == 1) {
                     document.querySelector('.videoplayer').play()
@@ -574,25 +628,24 @@ document.querySelectorAll('.itempause').forEach((item, index) => {
 
 function startSong() {
     gfunc.playSfx(11424, 12046);
-    document.querySelector('#coachselection .txt-loading').innerHTML = 'Loading. Please Wait...'
-    document.querySelector('#coachselection .txt-loading').style.display = 'block'
-    document.querySelector('#coachselection .button--continue').style.display = 'none'
-    gamevar.isOnCoachSelection = false
-    setTimeout(function () {
-        const videoplayer = document.querySelector('.video--preview')
-        videoplayer.pause()
-        videoplayer.src = ""
+    document.querySelector('#coachselection .txt-loading').innerHTML = 'Loading. Please Wait...';
+    document.querySelector('#coachselection .txt-loading').style.display = 'block';
+    document.querySelector('#coachselection .button--continue').style.display = 'none';
+    gamevar.isOnCoachSelection = false;
+
+    setTimeout(() => {
+        const videoPlayer = document.querySelector('.video--preview');
+        videoPlayer.pause();
+        videoPlayer.src = "";
         gfunc.playSfx(0, 3000);
-        gfunc.startTransition(false, 'scene/ui/hud.html', 'scene/act/hud.js')
-        setTimeout(function () {
-            document.querySelector("#coachselection").style.display = "none"
-            setTimeout(function () {
-                var video = document.querySelector(".videoplayer")
-                video.play()
-                document.querySelector("#coachselection").style.display = "none"
-            }, 600)
-        }, 1500)
-    }, 1000)
-
-
+        gfunc.startTransition(false, 'scene/ui/hud.html', 'scene/act/hud.js');
+        setTimeout(() => {
+            document.querySelector("#coachselection").style.display = "none";
+            setTimeout(() => {
+                const video = document.querySelector(".videoplayer");
+                video.play();
+                document.querySelector("#coachselection").style.display = "none";
+            }, 600);
+        }, 1500);
+    }, 1000);
 }
