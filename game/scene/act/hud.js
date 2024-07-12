@@ -14,6 +14,25 @@ gamevar.cdn = map.style.getPropertyValue("--song-codename");
 var preview = document.querySelector('#coachselection .preview');
 var bpath = (gamevar.selectedMaps && gamevar.selectedMaps.bkg_image) || `${gamevar.selectedBase}/assets/map_bkg.png`;
 document.querySelector('#coachselection .banner-bkg').style.backgroundImage = `url(${bpath})`;
+var coachUrl = {
+    "1": `${gamevar.selectedBase}/assets/common/coaches/${gamevar.cdn.toLowerCase()}_coach_1_big.png`,
+    "2": `${gamevar.selectedBase}/assets/common/coaches/${gamevar.cdn.toLowerCase()}_coach_2_big.png`,
+    "3": `${gamevar.selectedBase}/assets/common/coaches/${gamevar.cdn.toLowerCase()}_coach_3_big.png`,
+    "4": `${gamevar.selectedBase}/assets/common/coaches/${gamevar.cdn.toLowerCase()}_coach_4_big.png`
+}
+document.querySelector(`#coach-container`).setAttribute('numcoach', `4`)
+if (gamevar.selectedMaps && gamevar.selectedMaps.coaches) {
+    document.querySelector(`#coach-container`).setAttribute('numCoach', `${gamevar.selectedMaps.coaches}`)
+}
+Object.keys(coachUrl).forEach((coach) => {
+    if (gamevar.selectedBase.includes('justdancenow.com')) {
+        document.querySelector(`.coach-${coach} .coach-image`).style.backgroundImage = `url(${coachUrl[coach]})`
+    } else {
+        document.querySelector(`.coach-${coach} .coach-image`).style.backgroundImage = `url(${coachUrl[coach].replace('/assets/common/coaches/', '/assets/')})`
+    }
+
+})
+
 
 // Play sound effect
 gfunc.playSfx(11424, 12046);
@@ -58,8 +77,8 @@ async function fetchDataAndPlaySong() {
         } catch (err) {
             let a = jsona.substring(gamevar.cdn.length + 1, jsona.lastIndexOf(')'));
             try {
-            data = JSON.parse(a);
-            } catch(err){
+                data = JSON.parse(a);
+            } catch (err) {
                 console.log(`unable to load ${a}`)
             }
         }
@@ -150,7 +169,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         lyrics: hud.querySelector("#lyrics"),
         pictosbeat: this.lyrics.querySelector("#beat")
     }
-     ui.pictos.setAttribute("NumCoach", data.NumCoach);
+    ui.pictos.setAttribute("NumCoach", data.NumCoach);
     if (data.NumCoach > 1) {
         ui.pictos.classList.add('multi-coach')
     }
@@ -199,7 +218,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
         });
     }
     else {
-        video.src =  gamevar.selectedVideos || `${gamevar.selectedBase}/${gamevar.cdn}.mp4`
+        video.src = gamevar.selectedVideos || `${gamevar.selectedBase}/${gamevar.cdn}.mp4`
     }
     video.oncanplay = (event) => {
         setTimeout(function () {
@@ -237,11 +256,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
 
     document.querySelector(".OffsetNohud").innerHTML = songVar.nohudOffset;
     document.querySelector(".videoplayer").currentTime = songVar.nohudOffset / 1000;
-    try {
-        setTimeout(function () { gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine]) }, (songVar.LyricsLine[offset.lyricsLine].time - 1000))
-    } catch (err) {
-        console.log(err)
-    }
+    var isInitLine = true
     hud.classList.add("show")
     hud.style.setProperty("--menu-color", data.lyricsColor);
     function running() {
@@ -305,6 +320,17 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
             }
             // Debug Lyrics
             try {
+                if (isInitLine) {
+                    setTimeout(function () {
+                        gfunc.LyricsScroll(songVar.LyricsLine[offset.lyricsLine])
+                    }, (songVar.LyricsLine[offset.lyricsLine].time - 1000))
+                    isInitLine = false
+                }
+            } catch (err) {
+                console.log('Failed to init lyrics: ' + err)
+            }
+
+            try {
                 const isBelow = songVar.LyricsLine[offset.lyricsLine].duration < 150
                 const scrollTime = isBelow ? 0 : 150
                 if (songVar.LyricsLine[offset.lyricsLine] && songVar.LyricsLine[offset.lyricsLine].time - scrollTime + songVar.nohudOffset < songVar.currentTime) {
@@ -361,6 +387,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                     document.querySelector('#racetrack .player1').style.height = gfunc.percentage(offset.moves0, songVar.Moves0.length) + '%'
                     document.querySelector('#racetrack .raceline-bkg').style.height = (gfunc.percentage(offset.moves0, songVar.Moves0.length) / 1.3) + 15 + '%'
                     document.querySelector(".currentMoves0").innerHTML = `${songVar.Moves0[offset.moves0].time} ${songVar.Moves0[offset.moves0].name}`;
+                    const currentOffset = offset.moves0
                     setTimeout(function () {
                         //BOT RACELINE
                         var el = document.querySelector(".currentMoves0");
@@ -369,7 +396,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                         el.style.animation = null;
                         //BOT PLAYERS
                         var feedbackname = ".feedback-perfect"
-                        if (songVar.Moves0[offset.moves0-1].goldMove) { feedbackname = ".feedback-yeah" }
+                        if (songVar.Moves0[currentOffset].goldMove) { feedbackname = ".feedback-yeah" }
                         var player = document.querySelector('#players .player1')
                         var perfect = player.querySelector(feedbackname);
                         perfect.classList.remove('animate');
@@ -387,6 +414,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                 if (songVar.Moves1[offset.moves1].time + songVar.nohudOffset < songVar.currentTime) {
                     document.querySelector('#racetrack .player2').style.height = gfunc.percentage(offset.moves1, songVar.Moves1.length) + '%'
                     document.querySelector(".currentMoves1").innerHTML = `${songVar.Moves0[offset.moves0].time} ${songVar.Moves0[offset.moves0].name}`;
+                    const currentOffset = offset.moves1
                     setTimeout(function () {
                         //BOT RACELINE
                         var el = document.querySelector(".currentMoves1");
@@ -395,7 +423,7 @@ gfunc.playSong = (cdn, data, pictoatlas) => {
                         el.style.animation = null;
                         //BOT PLAYERS
                         var feedbackname = ".feedback-perfect"
-                        if (songVar.Moves1[offset.moves1-1].goldMove) { feedbackname = ".feedback-yeah" }
+                        if (songVar.Moves1[currentOffset].goldMove) { feedbackname = ".feedback-yeah" }
                         var player = document.querySelector('#players .player2')
                         var perfect = player.querySelector(feedbackname);
                         perfect.classList.remove('animate');

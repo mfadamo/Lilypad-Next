@@ -16,10 +16,10 @@ var keytask = {
             document.querySelector('#play').click()
         }
         if (getState() == 'hud') {
-            if (gamevar.isOnCoachSelection){
+            if (gamevar.isOnCoachSelection) {
                 document.querySelector('.button--continue').click()
             } else {
-            if (gamevar.isPaused) document.querySelector('.selected').click()
+                if (gamevar.isPaused) document.querySelector('.selected').click()
             }
         }
     },
@@ -31,7 +31,9 @@ var keytask = {
                     const previousElement = document.querySelector('.selected').previousElementSibling;
                     if (previousElement) previousElement.click()
                 } catch (err) {
-                    document.querySelectorAll('.itemsong')[0].click()
+                    try {
+                        document.querySelectorAll('.itemsong')[0].click()
+                    } catch (err) { }
                 }
                 event.preventDefault()
                 setTimeout(() => {
@@ -59,7 +61,10 @@ var keytask = {
                     const previousElement = document.querySelector('.selected').nextElementSibling;
                     if (previousElement) previousElement.click()
                 } catch (err) {
-                    document.querySelectorAll('.itemsong')[document.querySelectorAll('.itemsong').length - 1].click()
+                    try {
+                        document.querySelectorAll('.itemsong')[document.querySelectorAll('.itemsong').length - 1].click()
+                    } catch (err) { }
+                    
                 }
                 event.preventDefault()
                 setTimeout(() => {
@@ -202,15 +207,15 @@ function getPlatformKey(key = "VALIDATE") {
     var keyTexture;
     if (!gamevar.isGamepad) {
         keyTexture = {
-            "VALIDATE": "assets/textures/ui/key_enter.webp",
-            "BACK": "assets/textures/ui/key_esc.webp",
-            "REFRESH": "assets/textures/ui/key_f1.webp"
+            "VALIDATE": "assets/texture/ui/key_enter.webp",
+            "BACK": "assets/texture/ui/key_esc.webp",
+            "REFRESH": "assets/texture/ui/key_f1.webp"
         }
     } else {
         keyTexture = {
-            "VALIDATE": "assets/textures/ui/key_a.webp",
-            "BACK": "assets/textures/ui/key_b.webp",
-            "REFRESH": "assets/textures/ui/key_y.webp"
+            "VALIDATE": "assets/texture/ui/key_a.webp",
+            "BACK": "assets/texture/ui/key_b.webp",
+            "REFRESH": "assets/texture/ui/key_y.webp"
         }
     }
     return keyTexture[key]

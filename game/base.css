@@ -15,7 +15,7 @@ body {
   padding: 0;
   height: 100%;
   background-color: #000;
-  font-family: "Font1";
+  font-family: "Font2";
 }
 
 body {
@@ -129,6 +129,11 @@ body {
 .sceneTransition.fadeOut {
   opacity: 0;
   animation: fadeOut .4s;
+}
+
+
+.noanimation {
+  animation: none!important;
 }
 
 @keyframes startTransition {

@@ -21,8 +21,8 @@ function createWindow() {
 
   const mainSession = mainWindow.webContents.session;
   mainSession.webRequest.onBeforeSendHeaders({ urls: ['*://*/*'] }, (details, callback) => {
-    details.requestHeaders['Referer'] = 'https://justdancenow.com';
-
+    details.requestHeaders['Referer'] = 'https://justdancenow.com/';
+    details.requestHeaders['Origin'] = 'https://justdancenow.com';
     callback({ cancel: false, requestHeaders: details.requestHeaders });
   });
 

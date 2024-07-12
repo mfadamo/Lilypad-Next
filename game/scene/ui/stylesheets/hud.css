@@ -52,7 +52,7 @@
     transition: all .2s;
 }
 
-#racetrack .raceline-bar  {
+#racetrack .raceline-bar {
     background-color: var(--PlayerColorBlue);
     height: 0%;
     width: 0.09em;
@@ -63,18 +63,23 @@
     /* margin: 0.0205em; */
     transition: all .5s;
 }
+
 #racetrack .player2 {
     right: 0.02em;
 }
-#racetrack .raceline-bar.red, #player-container.red .player-color {
+
+#racetrack .raceline-bar.red,
+#player-container.red .player-color {
     background-color: var(--PlayerColorRed);
 }
 
 
 /*TEMPORARY*/
-#player-container.player3, #player-container.player4 {
+#player-container.player3,
+#player-container.player4 {
     display: none;
 }
+
 #debugger {
     z-index: 99;
     font-size: 0.2em;
@@ -106,7 +111,7 @@
     position: absolute;
     bottom: 0.2em;
     left: 0;
-    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    font-family: "Font2", "Helvetica Neue", Arial, Helvetica, sans-serif;
     font-size: 0.163em;
     left: 5.1%;
     bottom: 3.06em;
@@ -161,10 +166,11 @@
     background-size: 100% 100%;
     transition: background-size linear 200ms;
 }
+
 #lyrics .line.previous .fill {
     background-image: linear-gradient(90deg, var(--menu-color) 100%, #ffffff00 100%);
     background-size: 100% 100%;
-    transition: none!important;
+    transition: none !important;
 }
 
 #lyrics .line .fill:not(.filled) {
@@ -337,7 +343,7 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     height: 1.41em;
     width: 2.07703125em;
     left: -46.5%;
-    
+
 }
 
 #pictos .picto .texture {
@@ -453,54 +459,62 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     100% {
         opacity: 0;
     }
+
     0% {
         opacity: 1;
     }
 }
+
 @keyframes feedbackperfect {
     0% {
         opacity: 0;
         -webkit-transform: scale3d(1, 1, 1) rotate(354deg);
         transform: scale3d(1, 1, 1) rotate(354deg)
     }
+
     15% {
         opacity: 1;
         -webkit-transform: scale3d(0.8, 0.8, 1) rotate(354deg);
         transform: scale3d(1.2, 1.2, 1.2) rotate(354deg)
     }
+
     24% {
         -webkit-transform: scale3d(1, 1, 1) rotate(354deg);
         transform: scale3d(1, 1, 1) rotate(354deg)
     }
-    
+
     30% {
         opacity: 1;
         -webkit-transform: scale3d(0.8, 0.8, 1) rotate(354deg);
         transform: scale3d(1.1, 1.1, 1.1) rotate(354deg)
     }
-    
+
     43% {
         opacity: 1;
         -webkit-transform: translate3d(0, 0, 0) rotate(354deg);
         transform: translate3d(0, 0, 0) rotate(354deg)
     }
+
     100% {
         opacity: 0;
         -webkit-transform: translate3d(0, 5px, 0) scale3d(0.95, 0.95, 1) rotate(354deg);
         transform: translate3d(0, 0, 0) scale3d(0.95, 0.95, 1) rotate(354deg)
     }
 }
+
 @keyframes feedbackyeah {
     0% {
         opacity: 0;
         -webkit-transform: scale3d(1, 1, 1);
         transform: scale3d(0.9, 0.9, 0.9)
     }
+
     15% {
         opacity: 1;
         -webkit-transform: scale3d(0.8, 0.8, 1);
         transform: scale3d(1.2, 1.2, 1.2)
     }
+
     36% {
         opacity: 1
     }
@@ -642,7 +656,9 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     justify-content: center;
     align-items: center;
     display: flex;
+    font-family: "Font1";
 }
+
 #player-container {
     width: 2em;
     height: 100%;
@@ -652,7 +668,7 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     align-items: center;
 }
 
-.player-name  {
+.player-name {
     font-size: 0.25em;
     color: white;
     text-shadow: 0.03em 0.03em black;
@@ -669,6 +685,7 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     border-radius: 1em;
     top: 35%;
 }
+
 .perfect-bkg {
     width: 0.9em;
     height: 1.2em;
@@ -680,6 +697,7 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     left: 28%;
     position: absolute
 }
+
 .perfect-text {
     position: absolute;
     height: 0.36em;
@@ -692,12 +710,15 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     opacity: 0;
     z-index: 22;
 }
+
 .feedback-perfect.animate .perfect-bkg {
     animation: feedbackbg .8s;
 }
+
 .feedback-perfect.animate .perfect-text {
     animation: feedbackperfect .8s;
 }
+
 .yeah-bkg {
     width: 0.9em;
     height: 1.2em;
@@ -709,6 +730,7 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     left: 28%;
     position: absolute
 }
+
 .yeah-text {
     position: absolute;
     height: 0.36em;
@@ -721,9 +743,11 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     opacity: 0;
     z-index: 22;
 }
+
 .feedback-yeah.animate .yeah-bkg {
     animation: feedbackbg .8s;
 }
+
 .feedback-yeah.animate .yeah-text {
     animation: feedbackyeah .8s;
 }
@@ -883,36 +907,113 @@ html:not(.ipad) .hud.beat.even>#pictos>#beat-grad {
     box-sizing: border-box;
     border-radius: 0.1em;
     background-size: 100% 100%;
-    background-color: #000;
+    background-color: #00000041;
     background-repeat: no-repeat;
     background-position: center;
+    animation: banner-transition .9s;
 }
 
 #coachselection .button--continue {
-        width: 4em;
-        height: 0.9em;
-        overflow: hidden;
-        background: blue;
-        color: #fff;
-        font-size: 0.5em;
-        text-align: center;
-        position: absolute;
-        display: flex;
-        border-radius: 1em;
-        bottom: 3.6%;
-        right: 4%;
-        align-items: center;
-        justify-content: center;
-        display: none;
+    width: 4em;
+    height: 0.9em;
+    overflow: hidden;
+    background: blue;
+    color: #fff;
+    font-size: 0.5em;
+    text-align: center;
+    position: absolute;
+    display: flex;
+    border-radius: 1em;
+    bottom: 3.6%;
+    right: 4%;
+    align-items: center;
+    justify-content: center;
+    display: none;
 }
+
 #coachselection .txt-dance {
     font-size: 0.4em;
 }
+
 #coachselection .txt-loading {
     font-size: 0.16em;
     position: absolute;
     right: 10%;
     bottom: 6%;
-    font-family: 'Font1';
+    font-family: "Font2";
     color: lightblue;
+}
+
+#coach-container {
+    display: flex;
+    position: absolute;
+    height: 3.07em;
+    width: 100%;
+    top: 25%;
+    align-items: center;
+    justify-content: center;
+    animation: banner-transition .9s;
+}
+
+.coach-1,
+.coach-2,
+.coach-3,
+.coach-4 {
+    width: 100%;
+    height: 80%;
+    margin-right: .4em;
+    flex: 1;
+    animation: coach-anim 10s linear infinite alternate-reverse;
+}
+.coach-2,
+.coach-4 {
+    animation: coach-anim-flip 10s ease-in-out infinite alternate-reverse;
+}
+
+#coach-container[numcoach="1"] .coach-2,
+#coach-container[numcoach="1"] .coach-3,
+#coach-container[numcoach="2"] .coach-3,
+#coach-container[numcoach="1"] .coach-4,
+#coach-container[numcoach="2"] .coach-4,
+#coach-container[numcoach="3"] .coach-4 {
+    display: none!important;
+}
+
+.coach-image {
+    width: 100%;
+    background-position: center;
+    background-size: contain;
+    height: 100%;
+    background-repeat: no-repeat;
+}
+
+@keyframes banner-transition {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes coach-anim{
+    0%, 100% {
+        transform: translateY(3%);
+    }
+
+    50% {
+        transform: translateY(-3%);
+    }
+}
+@keyframes coach-anim-flip{
+    0%, 100% {
+        transform: translateY(-3%);
+    }
+
+    50% {
+        transform: translateY(3%);
+    }
 }
