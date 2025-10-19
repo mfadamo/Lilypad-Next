@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Lilypad Phone</title>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" />
+  <style>
+    :root {
+      --md-sys-color-primary: rgb(221, 185, 248);
+      --md-sys-color-surface-tint: rgb(221, 185, 248);
+      --md-sys-color-on-primary: rgb(63, 35, 88);
+      --md-sys-color-primary-container: rgb(87, 58, 112);
+      --md-sys-color-on-primary-container: rgb(241, 218, 255);
+      --md-sys-color-secondary: rgb(209, 193, 217);
+      --md-sys-color-on-secondary: rgb(55, 44, 63);
+      --md-sys-color-secondary-container: rgb(78, 66, 86);
+      --md-sys-color-on-secondary-container: rgb(238, 221, 246);
+      --md-sys-color-tertiary: rgb(243, 183, 188);
+      --md-sys-color-on-tertiary: rgb(76, 37, 41);
+      --md-sys-color-tertiary-container: rgb(102, 58, 63);
+      --md-sys-color-on-tertiary-container: rgb(255, 218, 220);
+      --md-sys-color-error: rgb(255, 180, 171);
+      --md-sys-color-on-error: rgb(105, 0, 5);
+      --md-sys-color-error-container: rgb(147, 0, 10);
+      --md-sys-color-on-error-container: rgb(255, 218, 214);
+      --md-sys-color-background: rgb(21, 18, 23);
+      --md-sys-color-on-background: rgb(232, 224, 232);
+      --md-sys-color-surface: rgb(21, 18, 23);
+      --md-sys-color-on-surface: rgb(232, 224, 232);
+      --md-sys-color-surface-variant: rgb(75, 69, 77);
+      --md-sys-color-on-surface-variant: rgb(205, 196, 206);
+      --md-sys-color-outline: rgb(150, 142, 152);
+      --md-sys-color-outline-variant: rgb(75, 69, 77);
+      --md-sys-color-shadow: rgb(0, 0, 0);
+      --md-sys-color-scrim: rgb(0, 0, 0);
+      --md-sys-color-inverse-surface: rgb(232, 224, 232);
+      --md-sys-color-inverse-on-surface: rgb(51, 47, 53);
+      --md-sys-color-inverse-primary: rgb(112, 82, 137);
+
+      --md-sys-color-surface-dim: rgb(21, 18, 23);
+      --md-sys-color-surface-bright: rgb(60, 56, 62);
+      --md-sys-color-surface-container-lowest: rgb(16, 13, 18);
+      --md-sys-color-surface-container-low: rgb(30, 26, 32);
+      --md-sys-color-surface-container: rgb(34, 30, 36);
+      --md-sys-color-surface-container-high: rgb(44, 41, 46);
+      --md-sys-color-surface-container-highest: rgb(55, 51, 57);
+
+      --md-sys-typescale-label-small-font: 500 0.688rem / 1rem system-ui;
+      --md-sys-typescale-label-medium-font: 500 0.75rem / 1rem system-ui;
+      --md-sys-typescale-label-large-font: 500 0.875rem / 1.25rem system-ui;
+      --md-sys-typescale-body-small-font: 400 0.75rem / 1rem system-ui;
+      --md-sys-typescale-body-medium-font: 400 0.875rem / 1.25rem system-ui;
+      --md-sys-typescale-body-large-font: 400 1rem / 1.5rem system-ui;
+      --md-sys-typescale-headline-small-font: 400 1.5rem / 2rem system-ui;
+      --md-sys-typescale-headline-medium-font: 400 1.75rem / 2.25rem system-ui;
+      --md-sys-typescale-headline-large-font: 400 2rem / 2.5rem system-ui;
+      --md-sys-typescale-title-small-font: 500 0.875rem / 1.25rem system-ui;
+      --md-sys-typescale-title-medium-font: 500 1rem / 1.5rem system-ui;
+      --md-sys-typescale-title-large-font: 500 1.375rem / 1.75rem system-ui;
+
+      --md-elevation-level1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+      --md-elevation-level2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+      --md-elevation-level3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
+      --md-elevation-level4: 0 2px 3px rgba(0, 0, 0, 0.3), 0 6px 10px 4px rgba(0, 0, 0, 0.15);
+      --md-elevation-level5: 0 4px 4px rgba(0, 0, 0, 0.3), 0 8px 12px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-background);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    .top-app-bar {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      position: relative;
+      z-index: 3;
+    }
+
+    .status-bar {
+      height: 24px;
+      background-color: var(--md-sys-color-surface);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .app-bar {
+      height: 64px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      background-color: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface);
+      box-shadow: var(--md-elevation-level1);
+    }
+
+    .app-bar-title {
+      font: var(--md-sys-typescale-title-large-font);
+      flex: 1;
+    }
+
+    #player-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+    }
+
+    #player-color {
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      margin-right: 16px;
+      background-color: var(--md-sys-color-primary);
+    }
+
+    #player-name {
+      font: var(--md-sys-typescale-title-medium-font);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    #connection-status {
+      display: flex;
+      align-items: center;
+      font: var(--md-sys-typescale-label-medium-font);
+    }
+
+    .material-symbols-outlined {
+      font-size: 24px;
+    }
+
+    #connection-status.connected .material-symbols-outlined {
+      color: var(--md-sys-color-primary);
+    }
+
+    #connection-status.disconnected .material-symbols-outlined {
+      color: var(--md-sys-color-error);
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+      overflow: hidden;
+      background-color: var(--md-sys-color-background);
+    }
+
+    .message-card {
+      border-radius: 28px;
+      padding: 4px;
+      width: 100%;
+    }
+
+    #message-display {
+      font: var(--md-sys-typescale-headline-small-font);
+      text-align: center;
+      color: var(--md-sys-color-on-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gesture-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 100%;
+    }
+
+    .gesture-card {
+      width: 100%;
+      border-radius: 28px;
+      background-color: var(--md-sys-color-surface-container);
+      overflow: hidden;
+      position: relative;
+
+      height: 100%;
+      box-shadow: var(--md-elevation-level2);
+    }
+
+    .gesture-pad {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .gesture-hint {
+      font: var(--md-sys-typescale-body-medium-font);
+      color: var(--md-sys-color-on-surface-variant);
+      text-align: center;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .gesture-feedback {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 40px;
+      background-color: var(--md-sys-color-primary-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .gesture-feedback .material-symbols-outlined {
+      font-size: 32px;
+      color: var(--md-sys-color-on-primary-container);
+    }
+
+    .gesture-feedback.active {
+      opacity: 1;
+    }
+
+    .gesture-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background-color: var(--md-sys-color-primary);
+      opacity: 0.2;
+      transform: scale(0);
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    .ripple-animation {
+      animation: ripple 0.6s ease-out forwards;
+    }
+
+    .control-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      width: 100%;
+      padding: 16px;
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      background-color: var(--md-sys-color-surface-container-high);
+      box-shadow: var(--md-elevation-level3);
+      z-index: 2;
+    }
+
+    .fab {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fab.primary {
+      background-color: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+    }
+
+    .fab.secondary {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .fab.tertiary {
+      background-color: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    .fab:active {
+      transform: scale(0.95);
+    }
+
+    .fullscreen-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--md-sys-color-background);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app-logo {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .app-logo-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      background-color: var(--md-sys-color-primary-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app-logo-inner .material-symbols-outlined {
+      font-size: 48px;
+      color: var(--md-sys-color-on-primary-container);
+    }
+
+    .loading-spinner {
+      height: 80%;
+      width: 80%;
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 100%;
+      border: 4px solid transparent;
+      border-top-color: var(--md-sys-color-primary);
+      border-left-color: var(--md-sys-color-primary);
+      animation: spin 1.5s linear infinite;
+      margin: auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .overlay-title {
+      font: var(--md-sys-typescale-headline-small-font);
+      color: var(--md-sys-color-on-background);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .overlay-text {
+      font: var(--md-sys-typescale-body-medium-font);
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .button {
+      min-width: 120px;
+      height: 40px;
+      border-radius: 20px;
+      border: none;
+      padding: 0 24px;
+      font: var(--md-sys-typescale-label-large-font);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .button-filled {
+      background-color: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+
+    .button-outlined {
+      background-color: transparent;
+      color: var(--md-sys-color-primary);
+      border: 1px solid var(--md-sys-color-outline);
+    }
+
+    .server-list {
+      width: 100%;
+      max-width: 400px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .server-card {
+      width: 100%;
+      background-color: var(--md-sys-color-surface-container-low);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--md-elevation-level1);
+    }
+
+    .server-card:active {
+      background-color: var(--md-sys-color-surface-container-high);
+    }
+
+    .server-ip {
+      font: var(--md-sys-typescale-body-medium-font);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .server-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background-color: var(--md-sys-color-primary);
+    }
+
+    .text-field-container {
+      width: 100%;
+      max-width: 400px;
+      margin: 16px 0;
+    }
+
+    .text-field-outlined {
+      width: 100%;
+      background-color: transparent;
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: 4px;
+      padding: 16px;
+      font: var(--md-sys-typescale-body-large-font);
+      color: var(--md-sys-color-on-surface);
+      outline: none;
+    }
+
+    .text-field-outlined::placeholder {
+      color: var(--md-sys-color-on-surface-variant);
+      opacity: 0.7;
+    }
+
+    .text-field-outlined:focus {
+      border-color: var(--md-sys-color-primary);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="top-app-bar">
+      <div class="app-bar">
+        <div id="player-info">
+          <div id="player-color"></div>
+          <div id="player-name">Player 1</div>
+        </div>
+        <div id="connection-status" class="connected">
+          <span class="status-text">Connected</span>
+          <span class="material-symbols-outlined">wifi</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="message-card">
+        <div id="message-display">Swipe to control!</div>
+      </div>
+
+      <div class="gesture-section">
+        <div class="gesture-card">
+          <div id="gesture-pad" class="gesture-pad">
+            <div class="gesture-hint">Swipe to move<br>Tap to select</div>
+            <div id="gesture-feedback-up" class="gesture-feedback">
+              <span class="material-symbols-outlined">arrow_upward</span>
+            </div>
+            <div id="gesture-feedback-down" class="gesture-feedback">
+              <span class="material-symbols-outlined">arrow_downward</span>
+            </div>
+            <div id="gesture-feedback-left" class="gesture-feedback">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </div>
+            <div id="gesture-feedback-right" class="gesture-feedback">
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </div>
+            <div id="gesture-feedback-center" class="gesture-feedback">
+              <span class="material-symbols-outlined">touch_app</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-bar">
+      <button id="back-button" class="fab tertiary">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <button id="menu-button" class="fab secondary">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <button id="action-button" class="fab primary">
+        <span class="material-symbols-outlined">play_arrow</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="start-screen" class="fullscreen-overlay">
+    <span class="secureWarning">This controller may not working properly. Use native apps instead.</span>
+    <div class="app-logo">
+      <div class="app-logo-inner">
+        <span class="material-symbols-outlined">smart_toy</span>
+      </div>
+    </div>
+    <h2 class="overlay-title">Lilypad Phone</h2>
+    <div class="text-field-container">
+      <input type="text" id="username-input" class="text-field-outlined" placeholder="Enter your username">
+    </div>
+    <button id="start-button" class="button button-filled">
+      <span class="material-symbols-outlined">
+        search
+      </span>&nbsp;START DANCING
+    </button>
+
+    <div id="server-list" class="server-list" style="display: none;">
+    </div>
+
+    <div class="text-field-container">
+      <input type="text" id="ip-input" class="text-field-outlined" placeholder="Enter IP address manually">
+    </div>
+
+    <button id="connect-button" class="button button-outlined">CONNECT</button>
+
+    <p id="scan-status" class="overlay-text">Ready to scan</p>
+  </div>
+
+  <div id="connection-screen" class="fullscreen-overlay" style="display: none;">
+    <div class="app-logo">
+      <div class="app-logo-inner">
+        <span class="material-symbols-outlined">smart_toy</span>
+      </div>
+      <div class="loading-spinner"></div>
+    </div>
+    <h2 class="overlay-title">Connecting to Game</h2>
+    <p class="overlay-text">Make sure you're on the same WiFi network as the game</p>
+    <p id="scan-text">Make sure you're on the same WiFi network as the game.</p>
+  </div>
+
+  <script>
+
+    if (window.isSecureContext) {
+      document.querySelector('.secureWarning').style.display = 'none'
+    }
+
+    class PhoneControllerClient {
+      constructor() {
+        this.ws = null;
+        this.connected = false;
+        this.phoneId = null;
+        this.playerProfile = null;
+        this.currentServer = null;
+        this.foundServers = [];
+        this.buttonStates = {
+          up: false,
+          down: false,
+          left: false,
+          right: false,
+          center: false,
+          back: false,
+          menu: false,
+          action: false
+        };
+
+        this.currentDirection = null;
+        this.motionEnabled = false;
+        this.lastMotion = null;
+        this.motionInterval = null;
+        this.tapThreshold = 15;
+
+        this.startScreen = document.getElementById('start-screen');
+        this.startButton = document.getElementById('start-button');
+        this.serverList = document.getElementById('server-list');
+        this.ipInput = document.getElementById('ip-input');
+        this.connectButton = document.getElementById('connect-button');
+        this.scanStatus = document.getElementById('scan-status');
+        this.scanText = document.getElementById('scan-text');
+        this.usernameInput = document.getElementById('username-input');
+
+        this.connectionScreen = document.getElementById('connection-screen');
+        this.connectionStatus = document.getElementById('connection-status');
+        this.playerName = document.getElementById('player-name');
+        this.playerColor = document.getElementById('player-color');
+        this.messageDisplay = document.getElementById('message-display');
+
+        this.gesturePad = document.getElementById('gesture-pad');
+
+        this.setupStartScreen();
+        this.setupEventListeners();
+        this.forceFullscreen();
+      }
+      async requestWakeLock() {
+        try {
+          if ('wakeLock' in navigator) {
+            this.wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake lock acquired');
+
+            document.addEventListener('visibilitychange', async () => {
+              if (this.wakeLock !== null && document.visibilityState === 'visible') {
+                this.wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake lock re-acquired');
+              }
+            });
+
+            this.wakeLock.addEventListener('release', () => console.log('Wake lock released'));
+          }
+        } catch (err) {
+          console.error('Failed to acquire wake lock:', err);
+        }
+      }
+
+
+      forceFullscreen() {
+        if (window.navigator.standalone) return;
+        document.documentElement.requestFullscreen().catch(() => { });
+        screen.orientation.lock('portrait').catch(() => { });
+      }
+
+      setupStartScreen() {
+        this.startButton.addEventListener('touchstart', () => {
+          if (this.connected) return;
+
+          if (window.location.pathname === '/controller') {
+            const host = window.location.host;
+            this.connectToServer(host);
+          } else {
+            if (this.isScanning) return;
+            this.scanNetwork();
+          }
+          if (document.fullscreenEnabled && !document.fullscreenElement) {
+            try {
+              document.documentElement.requestFullscreen();
+              console.log('Entered fullscreen');
+            } catch (err) {
+              console.warn('Fullscreen request failed:', err);
+            }
+          }
+
+          this.requestWakeLock();
+        });
+
+        this.connectButton.addEventListener('touchstart', () => {
+          const ipAddress = this.ipInput.value.trim();
+          if (ipAddress) this.attemptConnection(ipAddress);
+          if (document.fullscreenEnabled && !document.fullscreenElement) {
+            try {
+              document.documentElement.requestFullscreen();
+              console.log('Entered fullscreen');
+            } catch (err) {
+              console.warn('Fullscreen request failed:', err);
+            }
+          }
+
+          this.requestWakeLock();
+        });
+      }
+
+      enterFullscreenIfRequired() {
+        if (document.fullscreenEnabled && !document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.warn('Could not enter fullscreen:', err.message);
+          });
+          screen.orientation.lock('portrait').catch(err => {
+            console.warn('Could not lock orientation:', err.message);
+          });
+        }
+      }
+
+      async attemptConnection(ip) {
+        try {
+          const isValid = await this.checkServer(ip);
+          if (isValid) this.connectToServer(ip);
+          else this.showScanError(`Invalid server at ${ip}`);
+        } catch {
+          this.showScanError(`Failed to connect to ${ip}`);
+        }
+      }
+
+      async scanNetwork() {
+        this.connectionScreen.style.display = 'flex'
+        this.isScanning = true;
+        this.foundServers = [];
+        this.serverList.innerHTML = '';
+        this.serverList.style.display = 'block';
+        this.scanStatus.textContent = 'Scanning for servers...';
+        this.startButton.textContent = 'SCANNING...';
+
+        try {
+          const ip = await this.getLocalIP();
+          const parts = ip.split('.');
+          this.networkPrefix = `${parts[0]}.${parts[1]}.${parts[2]}`;
+          await this.scanIPRange();
+        } catch {
+          this.networkPrefix = '192.168.1';
+          await this.scanIPRange();
+        }
+
+        this.isScanning = false;
+        this.startButton.textContent = 'SCAN AGAIN';
+        this.scanStatus.textContent = this.foundServers.length > 0
+          ? `Found ${this.foundServers.length} server(s)`
+          : 'No servers found. Try entering IP manually.';
+
+
+        this.connectionScreen.style.display = 'none'
+      }
+
+      async scanIPRange() {
+        const scanPromises = [];
+        for (let i = 1; i <= 30; i++) {
+          const ip = `${this.networkPrefix}.${i}`;
+          scanPromises.push(this.checkServer(ip));
+        }
+        await Promise.allSettled(scanPromises);
+      }
+
+      async checkServer(ip) {
+        try {
+          const protocol = window.location.protocol === 'file:' ? 'http:' : window.location.protocol;
+          const response = await fetch(`${protocol}//${ip}/lilypad-controller`, { timeout: 2000 });
+          const data = await response.json();
+          this.scanText.textContent = 'Fetched ' + ip;
+          if (data?.['JD-LILYPAD']) {
+            this.addServerToList(ip);
+            return true;
+          }
+        } catch {
+          this.scanText.textContent = 'Failed ' + ip;
+        }
+        return false;
+      }
+
+      addServerToList(ip) {
+        if (this.foundServers.includes(ip)) return;
+        this.foundServers.push(ip);
+
+        const serverItem = document.createElement('div');
+        serverItem.className = 'server-item';
+        serverItem.innerHTML = `<span class="server-ip">${ip}</span><span class="server-status"></span>`;
+        serverItem.addEventListener('touchstart', () => this.connectToServer(ip));
+        this.serverList.appendChild(serverItem);
+      }
+
+      connectToServer(ip) {
+        this.startScreen.style.display = 'none';
+        this.connectionScreen.style.display = 'flex';
+        this.currentServer = ip;
+        this.connect(ip);
+      }
+
+      connect(host) {
+        if (this.ws) this.ws.close();
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const port = host.includes(':') ? '' : ':8080';
+        this.ws = new WebSocket(`${protocol}//${host}${port}/phone`);
+
+        this.ws.onopen = () => {
+          this.connected = true;
+          this.connectionStatus.textContent = 'Connected';
+          this.connectionStatus.className = 'connected';
+          this.sendProfileUpdate();
+        };
+
+        this.ws.onclose = () => {
+          this.connected = false;
+          this.connectionStatus.textContent = 'Disconnected';
+          this.connectionStatus.className = 'disconnected';
+
+          alert('Disconnected from server.');
+          this.goToStartScreen();
+        };
+
+        this.ws.onmessage = (e) => this.handleMessage(e.data);
+      }
+
+      goToStartScreen() {
+        this.connectionScreen.style.display = 'none';
+        this.startScreen.style.display = 'flex';
+        this.currentServer = null;
+        this.ws = null;
+      }
+
+
+      setupEventListeners() {
+        this.setupGesturePad();
+
+        ['back', 'menu', 'action'].forEach(btn => {
+          const button = document.getElementById(`${btn}-button`);
+          button.addEventListener('touchstart', () => {
+            this.enterFullscreenIfRequired();
+            this.handleButtonPress(btn, true)
+          });
+          button.addEventListener('touchend', () => this.handleButtonPress(btn, false));
+        });
+      }
+
+      setupGesturePad() {
+        const config = {
+          deadzone: 10,
+          holdThreshold: 300,
+          continuousRate: 150,
+          tapTimeout: 200,
+          maxTapMove: 10,
+          feedbackDuration: 200,
+          feedbackSize: 80
+        };
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let tracking = false;
+        let activeDirection = null;
+        let continuousTimer = null;
+        let holdTimer = null;
+        let isTap = true;
+
+        const resetState = () => {
+          if (continuousTimer) clearInterval(continuousTimer);
+          if (holdTimer) clearTimeout(holdTimer);
+          continuousTimer = null;
+          holdTimer = null;
+          tracking = false;
+
+          if (activeDirection) {
+            showDirectionFeedback(activeDirection, false);
+            this.handleDPadPress(activeDirection, false);
+            activeDirection = null;
+          }
+        };
+
+        const showDirectionFeedback = (dir, active) => {
+          const element = document.getElementById(`gesture-feedback-${dir}`);
+          if (element) {
+            if (active) {
+              element.style.opacity = "1";
+              element.style.transform = "scale(1.2)";
+              setTimeout(() => {
+                if (dir !== activeDirection) {
+                  element.style.opacity = "0";
+                  element.style.transform = "scale(1)";
+                }
+              }, config.feedbackDuration);
+            } else {
+              element.style.opacity = "0";
+              element.style.transform = "scale(1)";
+            }
+          }
+        };
+
+        const createRipple = (x, y) => {
+          const ripple = document.createElement('div');
+          ripple.className = 'gesture-ripple';
+          ripple.style.left = `${x}px`;
+          ripple.style.top = `${y}px`;
+          this.gesturePad.appendChild(ripple);
+
+          requestAnimationFrame(() => ripple.classList.add('ripple-animation'));
+
+          setTimeout(() => ripple.remove(), 600);
+        };
+
+        const activateDirection = (dir) => {
+          if (dir !== activeDirection) {
+            if (activeDirection) {
+              showDirectionFeedback(activeDirection, false);
+              this.handleDPadPress(activeDirection, false);
+            }
+
+            activeDirection = dir;
+            showDirectionFeedback(dir, true);
+            this.handleDPadPress(dir, true);
+
+            if (dir === 'center') {
+              setTimeout(() => {
+                showDirectionFeedback('center', false);
+                this.handleDPadPress('center', false);
+                activeDirection = null;
+              }, 150);
+            }
+            else if (['up', 'down', 'left', 'right'].includes(dir)) {
+              if (continuousTimer) clearInterval(continuousTimer);
+              continuousTimer = setInterval(() => {
+                this.handleDPadPress(dir, false);
+                setTimeout(() => this.handleDPadPress(dir, true), 10);
+
+                const padRect = this.gesturePad.getBoundingClientRect();
+                const centerX = padRect.width / 2;
+                const centerY = padRect.height / 2;
+                let offsetX = 0, offsetY = 0;
+
+                if (dir === 'up') offsetY = -20;
+                else if (dir === 'down') offsetY = 20;
+                else if (dir === 'left') offsetX = -20;
+                else if (dir === 'right') offsetX = 20;
+
+                createRipple(centerX + offsetX, centerY + offsetY);
+              }, config.continuousRate);
+            }
+          }
+        };
+
+        const getDirection = (deltaX, deltaY) => {
+          const absX = Math.abs(deltaX);
+          const absY = Math.abs(deltaY);
+
+          if (Math.max(absX, absY) < config.deadzone) return null;
+
+          if (Math.max(absX, absY) > config.maxTapMove) {
+            isTap = false;
+          }
+
+          return absX > absY
+            ? (deltaX > 0 ? 'right' : 'left')
+            : (deltaY > 0 ? 'down' : 'up');
+        };
+
+        this.gesturePad.addEventListener('touchstart', e => {
+          this.enterFullscreenIfRequired(); 
+          e.preventDefault();
+
+          resetState();
+
+          tracking = true;
+          isTap = true;
+          touchStartTime = Date.now();
+
+          const touch = e.touches[0];
+          touchStartX = touch.clientX;
+          touchStartY = touch.clientY;
+
+          const rect = this.gesturePad.getBoundingClientRect();
+          createRipple(touch.clientX - rect.left, touch.clientY - rect.top);
+
+          holdTimer = setTimeout(() => {
+            if (tracking && isTap) {
+              activateDirection('center');
+              isTap = false; 
+            }
+          }, config.holdThreshold);
+        });
+
+        this.gesturePad.addEventListener('touchmove', e => {
+          if (!tracking) return;
+          e.preventDefault();
+
+          const touch = e.touches[0];
+          const deltaX = touch.clientX - touchStartX;
+          const deltaY = touch.clientY - touchStartY;
+
+          const dir = getDirection(deltaX, deltaY);
+          if (dir) {
+            if (holdTimer) {
+              clearTimeout(holdTimer);
+              holdTimer = null;
+            }
+
+            activateDirection(dir);
+          }
+        });
+
+        this.gesturePad.addEventListener('touchend', e => {
+          e.preventDefault();
+
+          const touchDuration = Date.now() - touchStartTime;
+
+          if (tracking && isTap && touchDuration < config.tapTimeout) {
+            activateDirection('center');
+          }
+
+          resetState();
+        });
+
+        this.gesturePad.addEventListener('touchcancel', e => {
+          e.preventDefault();
+          resetState();
+        });
+
+        const style = document.createElement('style');
+        style.textContent = `
+    .gesture-feedback {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      opacity: 0;
+    }
+    .gesture-pad {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .gesture-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background-color: var(--md-sys-color-primary);
+      opacity: 0.2;
+      transform: scale(0);
+      pointer-events: none;
+      width: 40px;
+      height: 40px;
+      margin-left: -20px;
+      margin-top: -20px;
+    }
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    .ripple-animation {
+      animation: ripple 0.6s ease-out forwards;
+    }
+    .gesture-hint {
+      transition: opacity 0.3s ease;
+    }
+  `;
+        document.head.appendChild(style);
+
+        this.gesturePad.addEventListener('touchstart', () => {
+          const hint = this.gesturePad.querySelector('.gesture-hint');
+          if (hint) hint.style.opacity = '0';
+        }, { once: true });
+      }
+
+      handleDPadPress(dir, state) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            type: 'dpad',
+            direction: dir,
+            value: state ? 1 : 0
+          }));
+        }
+      }
+
+      handleButtonPress(btn, state) {
+        document.getElementById(`${btn}-button`).classList.toggle('active', state);
+
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            type: 'buttonPress',
+            button: btn,
+            pressed: state ? 1 : 0
+          }));
+        }
+      }
+
+      handleMessage(data) {
+        try {
+          const msg = JSON.parse(data);
+          if (msg.type === 'profile') this.updateProfile(msg.profile);
+          if (msg.type === 'displayMessage') this.messageDisplay.textContent = msg.text;
+          if (msg.type === 'enableMotion') this.handleMotionEnable(msg.enabled);
+        } catch (e) { }
+      }
+
+      handleMotionEnable(enabled) {
+        this.motionEnabled = enabled;
+        if (enabled) {
+          this.startMotionUpdates();
+        } else {
+          this.stopMotionUpdates();
+        }
+      }
+
+      async startMotionUpdates() {
+        console.log("→ requesting devicemotion permission…");
+        if (typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission) {
+          try {
+            const permission = await DeviceMotionEvent.requestPermission();
+            console.log("permission result:", permission);
+            if (permission !== 'granted') {
+              console.warn("Motion permission not granted");
+              return;
+            }
+          } catch (e) {
+            console.error("Motion permission request failed:", e);
+            return;
+          }
+        }
+        console.log("→ adding devicemotion listener");
+        this.motionListener = this.handleDeviceMotion.bind(this);
+        window.addEventListener('devicemotion', this.motionListener);
+      }
+
+      handleDeviceMotion(e) {
+        const m = e.accelerationIncludingGravity;
+        const G = 9.80665
+        if (!m) return;
+
+        const threshold = 0.001; // m/s²
+        if (
+          Math.abs(m.x) < threshold &&
+          Math.abs(m.y) < threshold &&
+          Math.abs(m.z) < threshold
+        ) {
+          return;
+        }
+
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          const now = performance.now()
+          const payload = {
+            type: 'motion',
+            data: {
+              x: m.x,
+              y: m.y,
+              z: m.z
+            },
+            timestamp: now
+          };
+          this.ws.send(JSON.stringify(payload));
+        }
+      }
+
+      stopMotionUpdates() {
+        if (this.motionListener) {
+          window.removeEventListener('devicemotion', this.motionListener);
+          this.motionListener = null;
+          console.log("→ removed devicemotion listener");
+        }
+      }
+
+      sendProfileUpdate() {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          const username = this.usernameInput.value.trim();
+          if (username) {
+            this.ws.send(JSON.stringify({
+              type: 'updateProfileData',
+              profile: { name: username }
+            }));
+          }
+        }
+      }
+
+      updateProfile(profile) {
+        this.playerProfile = profile;
+        this.playerName.textContent = profile.name || `Player ${this.phoneId + 1}`;
+        this.playerColor.style.backgroundColor = `rgba(${profile.color[0] * 255}, ${profile.color[1] * 255},${profile.color[2] * 255},${profile.color[3] * 255})`
+        this.connectionScreen.style.display = 'none';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.controller = new PhoneControllerClient();
+    });
+  </script>
+
+</body>
+
+</html>

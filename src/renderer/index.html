@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <meta name="description" content="Lilypad Next Game">
+  <title>Lilypad Next</title>
+</head>
+
+<body class="edible nosafe-area">
+  <div id="Game" blackscreen="false">
+    <div class="background"><canvas id="plasmaCanvas"></canvas></div>
+    <div class="sceneTransition"></div>
+    <div id="sceneDraw"></div>
+    <audio class="menu-audio" src="" loop=""></audio>
+    <div id="in-game-video">
+      <div class="video-container">
+        <video class="videoplayer js-player" src=""></video>
+        <audio class="audioplayer" src=""></audio>
+      </div>
+
+      <video class="video--preview" src="" autoplay="" loop=""></video>
+    </div>
+    <div class="overlay-hi">
+      <div class="connect-phone"></div>
+      <span class="shortcut"></span>
+      <div class="shortcut-ui">
+        <div class="button enablevocals" onclick="pressBack()"></div>
+        <div class="button back" onclick="pressBack()"></div>
+        <div class="button settings" onclick="toggleSettings()"></div>
+        <div class="button fullscreen" onclick="toggleFullScreen()"></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

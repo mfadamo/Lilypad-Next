@@ -1,0 +1,246 @@
+@font-face {
+    font-family: "Font1";
+    src: url('../assets/texture/ui/HNLTW1G.wf') format('woff');
+    src: url('../assets/texture/ui/HNLTW1G.wf2') format('woff2');
+  }
+  
+  @font-face {
+    font-family: "Font2";
+    src: url('../assets/texture/ui/HNM.ttf') format('truetype');
+  }
+
+  @font-face {
+    font-family: "Font1CJK";
+    font-weight: bolder;
+    src: url('../assets/texture/ui/NotoCJK.ttf') format('truetype');
+  }
+  
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #000;
+    font-family: "Font2", "Font1CJK";
+    overflow: hidden
+  }
+
+  * {
+    box-sizing: border-box;
+    will-change: auto;
+  }
+
+  .video-loading, .ui-loading {
+    border: 0.1em solid #f3f3f326;
+    border-top: 0.1em solid #ffffff;
+    border-radius: 50%;
+    width: 0.6em;
+    height: 0.6em;
+    animation: spin 0.6s linear infinite;
+    top: calc(50% - 0.3em);
+    position: absolute;
+    left: calc(50% - 0.3em);
+    filter: drop-shadow(0em 0px 0.1em rgba(255, 255, 255, 0.671));
+  }
+  
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #Game[blackscreen="false"],
+  .sceneTransition {
+    background-image: none;
+    background-position: center;
+    background-size: 100% 100%;
+    /* Add your content styling here */
+    background-image: url(../assets/texture/ui/jdbg.png);
+  }
+  .background {
+    z-index: 0;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    background-image: url(../assets/texture/ui/jdbg.png);
+    background-size: 100% 100%;
+  }
+  .background canvas{
+    height: 100%;
+    width: 100%;
+    position: absolute;
+  }
+  #Game {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  .nosafe-area #Game {
+    overflow: visible;
+  }
+  ::selection {
+    color: none;
+    background: none;
+  }
+  
+  /* For Mozilla Firefox */
+  ::-moz-selection {
+    color: none;
+    background: none;
+  }
+  
+  #sceneDraw,
+  .sceneTransition {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .sceneTransition {
+    position: absolute;
+    z-index: 99;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    visibility: hidden;
+    background-size: 200% 200%;
+  }
+  
+  .sceneTransition::after {
+    width: 60%;
+    height: 60%;
+    content: '';
+    display: block;
+    position: absolute;
+    background-image: url(../assets/texture/ui/JD_Series.webp);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+  }
+  
+  #in-game-video {
+    position: absolute;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    top: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .videoplayer {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+  }
+  
+  .sceneTransition.fadeIn::after {
+    animation: startTransition .4s;
+  }
+  
+  .sceneTransition.fadeIn {
+    animation: fadeIn .4s;
+  }
+  
+  .sceneTransition.fadeOut {
+    opacity: 0;
+    animation: fadeOut .4s;
+  }
+  
+  
+  .noanimation {
+    animation: none!important;
+  }
+  
+  @keyframes startTransition {
+    0% {
+      opacity: 0;
+      transform: translateX(-1em);
+    }
+  
+    100% {
+      opacity: 1;
+      transform: translateX(0em);
+    }
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+  
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes FadeLoop {
+    0% {
+      opacity: 0;
+    }
+  
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes FadeBGLoop {
+    0% {
+      opacity: 0.5;
+    }
+  
+    100% {
+      opacity: 1;
+    }
+  }
+
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+      -webkit-transform: rotate(0deg);
+      will-change: transform;
+    }
+    50% {
+      transform: rotate(180deg);
+      -webkit-transform: rotate(180deg);
+      will-change: transform;
+    }
+    100% {
+      transform: rotate(360deg);
+      -webkit-transform: rotate(360deg);
+      will-change: transform;
+    }
+  }
+  
+  @keyframes fadeOut {
+    0% {
+      opacity: 1;
+    }
+  
+    100% {
+      opacity: 0;
+    }
+  }
+
+button {
+  padding: 1em;
+  margin: 1em;
+  background-color: #e066ff;
+  color: white;
+  border-radius: 1em;
+  border: none;
+
+}
+button.focused {
+  padding: 1em;
+  margin: 1em;
+  background-color: #7866ff;
+  color: white;
+}

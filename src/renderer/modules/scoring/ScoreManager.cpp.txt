@@ -1,0 +1,1289 @@
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+
+#include "Includes/ScoreManager.h"
+#include "Includes/Measures.h"
+#include "Includes/MeasuresIds.h"
+
+namespace MSP_LIB
+{
+	// ===============================================================================================================================================================================================
+	// functions for game and tools interfaces
+	// ===============================================================================================================================================================================================
+
+    using namespace std;
+
+	ScoreManager::ScoreManager()
+	: mu64_PrevMoveMeasuresSetBitfield(0)
+	, muc_MoveAnalysisPartsCount(0)
+	, mb_EnergyComputationIsRequired(false)
+	, mul_ClassifierFormatVersionNumberToUse(0)
+	, mf_DefaultMoveStatDistLowThreshold(0.0f)
+	, mf_DefaultMoveStatDistHighThreshold(0.0f)
+	, mf_DefaultMoveAutoCorrelationThreshold(0.0f)
+	, mf_DefaultMoveDirectionImpactFactor(0.0f)
+	, mf_GameMoveDuration(0.0f)
+	, mf_MoveStatDistLowThreshold(0.0f)
+	, mf_MoveStatDistHighThreshold(0.0f)
+	, mf_MoveAutoCorrelationThreshold(0.0f)
+	, mf_MoveDirectionImpactFactor(0.0f)
+	, mul_CustomizationFlags(0)
+	, mf_InitialSignalSmoothingFrequency(0.0f)
+	, mf_CurrentSignalSmoothingFrequency(0.0f)
+	, mf_SignalSmoothingNextProgressRatio(0.0f)
+	, mul_SignalSmoothing_UpdatesCount(0)
+	, mf_SignalSmoothing_AccelXSum(0.0f)
+	, mf_SignalSmoothing_AccelYSum(0.0f)
+	, mf_SignalSmoothing_AccelZSum(0.0f)
+    , mf_LastMoveStatisticalDistance(0.0f)
+	, mb_MoveIsRunning(false)
+	, mb_FirstUpdateHasOccurred(false)
+	, mf_AutoCorrelationAccelNormsSum(0.0f)
+	, mb_AutoCorrelationSignalHasAlreadyBeenCentered(false)
+    , mf_LowDistanceThresholdModifier(0.0f)
+    , mf_HighDistanceThresholdModifier(0.0f)
+    , mf_ShakeSensitivityModifier(0.0f)
+    , mf_DirectionSensitivityModifier(0.0f)
+	{
+		mp_GameInterface = new GameInterface(this);
+		mp_ToolsInterface = new ToolsInterface(this);
+		mpst_MoveClassifier = new stMoveClassifier();
+	}
+
+	ScoreManager::~ScoreManager()
+	{
+		DestroySignalsAndMeasures();
+
+		mast_Signals.clear();
+		mast_Measures.clear();
+
+		delete mpst_MoveClassifier;
+		mpst_MoveClassifier = NULL;
+		
+		delete mp_ToolsInterface;
+		mp_ToolsInterface = NULL;
+
+        delete mp_GameInterface;
+        mp_GameInterface = NULL;
+	}
+
+	void ScoreManager::InitForGeneration(bool _b_EnergyComputationIsRequired, float _f_SignalSmoothingFrequency, u32 _ul_ClassifierFormatVersionNumberToUse)
+	{
+		mb_EnergyComputationIsRequired = _b_EnergyComputationIsRequired;
+		mf_InitialSignalSmoothingFrequency = _f_SignalSmoothingFrequency;
+		mul_ClassifierFormatVersionNumberToUse = _ul_ClassifierFormatVersionNumberToUse;
+		mf_DefaultMoveStatDistLowThreshold = - 1.0f;
+		mf_DefaultMoveStatDistHighThreshold = - 1.0f;
+		mf_DefaultMoveAutoCorrelationThreshold = - 1.0f;
+		mf_DefaultMoveDirectionImpactFactor = - 1.0f;
+		mb_MoveIsRunning = false;
+	}
+
+	void ScoreManager::InitForScoring(float _f_DefaultStatDistLowThreshold, float _f_DefaultStatDistHighThreshold, float _f_DefaultAutoCorrelationThreshold, float _f_DefaultDirectionImpactFactor, float _f_SignalSmoothingFrequency)
+	{
+		mf_DefaultMoveStatDistLowThreshold = _f_DefaultStatDistLowThreshold;
+		mf_DefaultMoveStatDistHighThreshold = _f_DefaultStatDistHighThreshold;
+		mf_DefaultMoveAutoCorrelationThreshold = _f_DefaultAutoCorrelationThreshold;
+		mf_DefaultMoveDirectionImpactFactor = _f_DefaultDirectionImpactFactor;
+		mf_InitialSignalSmoothingFrequency = _f_SignalSmoothingFrequency;
+		mb_MoveIsRunning = false;
+	}
+
+	void ScoreManager::StartMoveAnalysis(u64 _u64_MeasuresSetBitfield, float _f_ClassifierMoveDuration, float _f_GameMoveDuration, float _f_MoveStatDistLowThreshold, float _f_MoveStatDistHighThreshold, float _f_MoveAutoCorrelationThreshold, float _f_MoveDirectionImpactFactor, u32 _ul_CustomizationFlags)
+	{
+		if (mb_MoveIsRunning)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : StartMoveAnalysis() has been called but a move is currently running. Should call StopMoveAnalysis() before.");
+			return;
+		}
+
+		u8 uc_MoveAnalysisPartsNewCount = ucGetMoveAnalysisPartsCounts(_f_ClassifierMoveDuration);
+
+		if (_u64_MeasuresSetBitfield != mu64_PrevMoveMeasuresSetBitfield || uc_MoveAnalysisPartsNewCount != muc_MoveAnalysisPartsCount)
+		{
+			muc_MoveAnalysisPartsCount = uc_MoveAnalysisPartsNewCount;
+
+			DestroySignalsAndMeasures();
+			CreateSignalsAndMeasures(_u64_MeasuresSetBitfield);
+
+			mu64_PrevMoveMeasuresSetBitfield = _u64_MeasuresSetBitfield;
+		}
+
+		ResetSignalsAndMeasures();
+
+		mf_GameMoveDuration = _f_GameMoveDuration;
+
+		mf_MoveStatDistLowThreshold = _f_MoveStatDistLowThreshold == - 1.0f ? mf_DefaultMoveStatDistLowThreshold : _f_MoveStatDistLowThreshold;
+        mf_MoveStatDistLowThreshold += mf_LowDistanceThresholdModifier;
+        Clamp(mf_MoveStatDistLowThreshold, STAT_DIST_LOW_THRESHOLD_MIN, STAT_DIST_LOW_THRESHOLD_MAX);
+
+		mf_MoveStatDistHighThreshold = _f_MoveStatDistHighThreshold == - 1.0f ? mf_DefaultMoveStatDistHighThreshold : _f_MoveStatDistHighThreshold;
+        mf_MoveStatDistHighThreshold += mf_HighDistanceThresholdModifier;
+        Clamp(mf_MoveStatDistHighThreshold, STAT_DIST_HIGH_THRESHOLD_MIN, STAT_DIST_HIGH_THRESHOLD_MAX);
+
+		mf_MoveAutoCorrelationThreshold = _f_MoveAutoCorrelationThreshold == - 1.0f ? mf_DefaultMoveAutoCorrelationThreshold : _f_MoveAutoCorrelationThreshold;
+        mf_MoveAutoCorrelationThreshold += mf_ShakeSensitivityModifier * (AUTO_CORRELATION_THRESHOLD_MIN - AUTO_CORRELATION_THRESHOLD_MAX);
+        Clamp(mf_MoveAutoCorrelationThreshold, AUTO_CORRELATION_THRESHOLD_MIN, AUTO_CORRELATION_THRESHOLD_MAX);
+        if (mf_MoveAutoCorrelationThreshold == AUTO_CORRELATION_THRESHOLD_MAX)
+            _ul_CustomizationFlags |= eCCF_IgnoreAutoCorrelation;
+
+		mf_MoveDirectionImpactFactor = _f_MoveDirectionImpactFactor == - 1.0f ? mf_DefaultMoveDirectionImpactFactor : _f_MoveDirectionImpactFactor;
+        mf_MoveDirectionImpactFactor += mf_DirectionSensitivityModifier;
+        Clamp(mf_MoveDirectionImpactFactor, DIRECTION_IMPACT_FACTOR_THRESHOLD_MIN, DIRECTION_IMPACT_FACTOR_THRESHOLD_MAX);
+        if (mf_MoveDirectionImpactFactor == DIRECTION_IMPACT_FACTOR_THRESHOLD_MIN)
+            _ul_CustomizationFlags |= eCCF_IgnorePartsDirection;
+
+		mul_CustomizationFlags = _ul_CustomizationFlags;
+		mf_SignalSmoothingNextProgressRatio = 1.0f / (_f_GameMoveDuration * mf_InitialSignalSmoothingFrequency);
+		mf_CurrentSignalSmoothingFrequency = mf_InitialSignalSmoothingFrequency;
+		mul_SignalSmoothing_UpdatesCount = 0;
+		mf_SignalSmoothing_AccelXSum = 0.0f;
+		mf_SignalSmoothing_AccelYSum = 0.0f;
+		mf_SignalSmoothing_AccelZSum = 0.0f;
+		mf_LastMoveStatisticalDistance = - 1.0f;
+
+		mast_NonAccelDirMeasuresResultsAtMoveEnd.clear();
+		maf_EnergyMeansResultsAtMoveEnd.clear();
+		maf_PerformedDirectionStatDistByPart.clear();
+		maf_InvertedDirectionStatDistByPart.clear();
+
+		mast_AutoCorrelationSignal.clear();
+		mf_AutoCorrelationAccelNormsSum = 0.0f;
+		mb_AutoCorrelationSignalHasAlreadyBeenCentered = false;
+
+		mb_FirstUpdateHasOccurred = false;
+		mb_MoveIsRunning = true;
+	}
+
+	bool ScoreManager::bStartMoveAnalysis(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize, float _f_GameMoveDuration)
+	{
+		if (!_pc_ClassifierFileData)
+			return false;
+
+		ClearMoveClassifierStruct();
+
+		if (!bFillMoveClassifierStructFromFileData(_pc_ClassifierFileData, _ul_ClassifierFileSize))
+			return false;
+
+		u64 u64_MeasuresSetBitfield = ToolsInterface::u64GetMoveMeasureSetBitfieldFromFileData(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (u64_MeasuresSetBitfield == 0)
+			return false;
+
+		mb_EnergyComputationIsRequired = ToolsInterface::ucGetEnergyMeasuresCountFromFileData(_pc_ClassifierFileData, _ul_ClassifierFileSize) > 0;
+		mul_ClassifierFormatVersionNumberToUse = ToolsInterface::ulGetClassifierFormatVersionNumberFromFileData(_pc_ClassifierFileData);
+
+		bool b_EndiannessSwapRequired = bIsEndiannessSwapRequired(_pc_ClassifierFileData);
+		float f_ClassifierMoveDuration = fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_DURATION), b_EndiannessSwapRequired);
+		float f_MoveStatDistLowThreshold = fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_STAT_DIST_LOW_THRESHOLD), b_EndiannessSwapRequired);
+		float f_MoveStatDistHighThreshold = fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_STAT_DIST_HIGH_THRESHOLD), b_EndiannessSwapRequired);
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		u32 ul_CustomizationFlags = ulGetEndiannessCompatibleU32(*(int*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_CUSTOMIZATION_FLAGS - c_ClassifierFormatCompatibilityOffset), b_EndiannessSwapRequired);
+
+		float f_MoveAutoCorrelationThreshold;
+		float f_MoveDirectionImpactFactor;
+		if (mul_ClassifierFormatVersionNumberToUse >= CLASSIFIER_FORMAT_VERSION_NUMBER_WITH_AC_AND_DIR_SETTINGS)
+		{	
+			f_MoveAutoCorrelationThreshold = fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_AUTOCORRELATION_THRESHOLD), b_EndiannessSwapRequired);
+			f_MoveDirectionImpactFactor = fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_DIRECTION_IMPACT_FACTOR), b_EndiannessSwapRequired);
+		}
+		else
+		{
+			f_MoveAutoCorrelationThreshold = - 1.0f;
+			f_MoveDirectionImpactFactor = - 1.0f;
+		}
+
+		StartMoveAnalysis(u64_MeasuresSetBitfield, f_ClassifierMoveDuration, _f_GameMoveDuration, f_MoveStatDistLowThreshold, f_MoveStatDistHighThreshold, f_MoveAutoCorrelationThreshold, f_MoveDirectionImpactFactor, ul_CustomizationFlags);
+		return true;
+	}
+
+	void ScoreManager::StopMoveAnalysis()
+	{
+		if (!mb_MoveIsRunning)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : StopMoveAnalysis() has been called but no move is currently running. Should call StartMoveAnalysis() before.");
+			return;
+		}
+
+		mb_MoveIsRunning = false;
+
+		// measures results storing
+
+		vec_MeasuresResultsAtMoveEnd ast_EnergyNeededMeasuresResultsAtMoveEnd;
+
+		for (vec_Measures::iterator iter_Measure = mast_Measures.begin(); iter_Measure != mast_Measures.end(); ++ iter_Measure)
+		{
+			if (iter_Measure->mb_UsedForScoringComputation)
+				mast_NonAccelDirMeasuresResultsAtMoveEnd.push_back(stMeasuresResultAtMoveEnd(iter_Measure->muc_Id, iter_Measure->mp_Measure->fGetValue(), iter_Measure->muc_PartPos));
+
+			if (iter_Measure->mb_UsedForEnergyComputation)
+				ast_EnergyNeededMeasuresResultsAtMoveEnd.push_back(stMeasuresResultAtMoveEnd(iter_Measure->muc_Id, iter_Measure->mp_Measure->fGetValue(), iter_Measure->muc_PartPos));
+		}
+
+		// energy means computation
+
+		if (!ast_EnergyNeededMeasuresResultsAtMoveEnd.empty())
+		{
+			float f_AccelNormAvgValuesSum = 0.0f;
+			u8 uc_AccelNormAvgValuesCount = 0;
+
+			float f_AccelDevNormAvgValuesSum = 0.0f;
+			u8 uc_AccelDevNormAvgValuesCount = 0;
+
+			for (vec_MeasuresResultsAtMoveEnd::iterator iter_MeasureResult = ast_EnergyNeededMeasuresResultsAtMoveEnd.begin(); iter_MeasureResult != ast_EnergyNeededMeasuresResultsAtMoveEnd.end(); ++ iter_MeasureResult)
+			{
+				if ((*iter_MeasureResult).muc_MeasureId == eMeasureId_AccelNormAvg_NP)
+				{
+					f_AccelNormAvgValuesSum += (*iter_MeasureResult).mf_Value;
+					++ uc_AccelNormAvgValuesCount;
+				}
+				else if ((*iter_MeasureResult).muc_MeasureId == eMeasureId_AccelDevNormAvg_NP)
+				{
+					f_AccelDevNormAvgValuesSum += (*iter_MeasureResult).mf_Value;
+					++ uc_AccelDevNormAvgValuesCount;
+				}
+			}
+
+			if (uc_AccelNormAvgValuesCount > 0)
+				maf_EnergyMeansResultsAtMoveEnd.push_back(f_AccelNormAvgValuesSum / uc_AccelNormAvgValuesCount);
+			if (uc_AccelDevNormAvgValuesCount > 0)
+				maf_EnergyMeansResultsAtMoveEnd.push_back(f_AccelDevNormAvgValuesSum / uc_AccelDevNormAvgValuesCount);
+		}
+	}
+
+	bool ScoreManager::bCanComputeDirectionStatDistsByPart(bool _b_DontComputeIfIgnored)
+	{
+		if (mpst_MoveClassifier->ml_ScoringAlgorithmType == 0)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : ComputeDirectionStatDistsByPart() can't compute anything as it has no useable classifier. Don't forget to call StopMoveAnalysis() before.");
+			return false;
+		}
+
+		if (_b_DontComputeIfIgnored && mul_CustomizationFlags & eCCF_IgnorePartsDirection)
+			return false;
+
+        vec_Floats::iterator iter_Means = mpst_MoveClassifier->maf_Means.begin();
+        vec_Floats::iterator iter_InvertedCovariances = mpst_MoveClassifier->maf_InvertedCovariances.begin();
+
+		u8 uc_MeasuresCount = 0;
+
+		vector<stPartAccelAvg> ast_PartAccelAvgs;
+		ast_PartAccelAvgs.resize(muc_MoveAnalysisPartsCount);
+
+		for (vec_MeasuresResultsAtMoveEnd::iterator iter_MeasureResult = mast_NonAccelDirMeasuresResultsAtMoveEnd.begin(); iter_MeasureResult != mast_NonAccelDirMeasuresResultsAtMoveEnd.end(); ++ iter_MeasureResult)
+		{
+			if (iter_MeasureResult->muc_MeasureId == eMeasureId_AxDevAvg_Dir_NP || iter_MeasureResult->muc_MeasureId == eMeasureId_AyDevAvg_Dir_NP || iter_MeasureResult->muc_MeasureId == eMeasureId_AzDevAvg_Dir_NP)
+			{
+				++ uc_MeasuresCount;
+				u8 uc_PartAccelIndex = iter_MeasureResult->muc_PartPos - 1;
+
+				switch (iter_MeasureResult->muc_MeasureId)
+				{
+					case eMeasureId_AxDevAvg_Dir_NP:
+					{
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgResults.x = iter_MeasureResult->mf_Value;
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgMeans.x = *iter_Means;
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgInvertedCovariances.x = *iter_InvertedCovariances;
+					}
+					break;
+
+					case eMeasureId_AyDevAvg_Dir_NP:
+					{
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgResults.y = iter_MeasureResult->mf_Value;
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgMeans.y = *iter_Means;
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgInvertedCovariances.y = *iter_InvertedCovariances;
+					}
+					break;
+
+					case eMeasureId_AzDevAvg_Dir_NP:
+					{
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgResults.z = iter_MeasureResult->mf_Value;
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgMeans.z = *iter_Means;
+						ast_PartAccelAvgs[uc_PartAccelIndex].mv_PartAccelAvgInvertedCovariances.z = *iter_InvertedCovariances;
+					}
+					break;
+				}
+			}
+
+			++ iter_Means;
+			++ iter_InvertedCovariances;
+		}
+
+ 		if (uc_MeasuresCount != 3.0f * muc_MoveAnalysisPartsCount)
+ 			return false;
+
+		for (u8 uc_PartAccelIndex = 0; uc_PartAccelIndex < muc_MoveAnalysisPartsCount; ++ uc_PartAccelIndex)
+		{
+			maf_PerformedDirectionStatDistByPart.push_back(sqrtf(fComputeSqrDistFromAccelAvgResultAndClassifierData(ast_PartAccelAvgs[uc_PartAccelIndex])));
+
+			stPartAccelAvg st_InvertedDirectionStatDist = ast_PartAccelAvgs[uc_PartAccelIndex];
+			st_InvertedDirectionStatDist.mv_PartAccelAvgResults.x = - st_InvertedDirectionStatDist.mv_PartAccelAvgResults.x;
+			st_InvertedDirectionStatDist.mv_PartAccelAvgResults.y = - st_InvertedDirectionStatDist.mv_PartAccelAvgResults.y;
+			st_InvertedDirectionStatDist.mv_PartAccelAvgResults.z = - st_InvertedDirectionStatDist.mv_PartAccelAvgResults.z;
+
+			maf_InvertedDirectionStatDistByPart.push_back(sqrtf(fComputeSqrDistFromAccelAvgResultAndClassifierData(st_InvertedDirectionStatDist)));
+		}
+
+		return true;
+	}
+
+	float ScoreManager::fGetSureRightDirectionPartsRatio()
+	{
+		// compute sure right parts direction ratio
+
+		u8 uc_SureRightDirectionPartsCount = 0;
+
+		for (u8 uc_PartIndex = 0; uc_PartIndex < muc_MoveAnalysisPartsCount; ++ uc_PartIndex)
+		{
+			if (maf_InvertedDirectionStatDistByPart[uc_PartIndex] > maf_PerformedDirectionStatDistByPart[uc_PartIndex])
+				++ uc_SureRightDirectionPartsCount;
+		}
+
+		float f_SureRightDirectionPartsRatio = (float)uc_SureRightDirectionPartsCount / (float)(muc_MoveAnalysisPartsCount);
+
+		// return a negative result is parts direction have to be ignored, otherwise return the normal positive result
+
+		return mul_CustomizationFlags & eCCF_IgnorePartsDirection ? - f_SureRightDirectionPartsRatio : f_SureRightDirectionPartsRatio;
+	}
+
+	float ScoreManager::fGetSureWrongDirectionPartsRatio()
+	{
+		// compute sure wrong parts direction ratio
+
+		u8 uc_SureWrongDirectionPartsCount = 0;
+
+		for (u8 uc_PartIndex = 0; uc_PartIndex < muc_MoveAnalysisPartsCount; ++ uc_PartIndex)
+		{
+			if (maf_InvertedDirectionStatDistByPart[uc_PartIndex] < maf_PerformedDirectionStatDistByPart[uc_PartIndex])
+				++ uc_SureWrongDirectionPartsCount;
+		}
+
+		float f_SureWrongDirectionPartsRatio = (float)uc_SureWrongDirectionPartsCount / (float)(muc_MoveAnalysisPartsCount);
+
+		// return a negative result is parts direction have to be ignored, otherwise return the normal positive result
+
+		return mul_CustomizationFlags & eCCF_IgnorePartsDirection ? - f_SureWrongDirectionPartsRatio : f_SureWrongDirectionPartsRatio;
+	}
+
+	float ScoreManager::fGetDirectionTendencyImpactOnScoreRatio()
+	{
+		// compute direction tendency
+
+		c8 c_DirectionTendency = 0;
+
+		for (u8 uc_PartIndex = 0; uc_PartIndex < muc_MoveAnalysisPartsCount; ++ uc_PartIndex)
+		{
+			float f_PartDirectionTendency = maf_InvertedDirectionStatDistByPart[uc_PartIndex] - maf_PerformedDirectionStatDistByPart[uc_PartIndex];
+
+			if (f_PartDirectionTendency > 0.0f)
+				++ c_DirectionTendency;
+			else if (f_PartDirectionTendency < 0.0f)
+				-- c_DirectionTendency;
+		}
+
+		// return direction tendency impact on score (as ratio)
+
+		return ((float)(c_DirectionTendency) / (float)(muc_MoveAnalysisPartsCount)) * mf_MoveDirectionImpactFactor;
+	}
+
+	float ScoreManager::fGetLastMoveStatisticalDistance()
+	{
+		// classifier not valid : exit
+
+		if (mpst_MoveClassifier->ml_ScoringAlgorithmType == 0)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : fGetLastMoveStatisticalDistanceOnOffsetedPart() can't compute anything as it has no useable classifier. Don't forget to call StopMoveAnalysis() before.");
+			return - 1.0f;
+		}
+
+		// if this function has been already called : directly returns statistical distance
+
+        if (mf_LastMoveStatisticalDistance != - 1.0f)
+			return mf_LastMoveStatisticalDistance;
+
+		// proceed
+
+		float f_SqrStatisticalDistance = 0.0f;
+		u8 uc_MeasuresUsedForScoringCount = 0;
+
+		// compute deviation for each measure
+
+        vec_Floats::iterator iter_Means = mpst_MoveClassifier->maf_Means.begin();
+        vec_Floats::iterator iter_InvertedCovariances = mpst_MoveClassifier->maf_InvertedCovariances.begin();
+
+		// compute distance using right algorithm
+
+		if (mpst_MoveClassifier->ml_ScoringAlgorithmType > 0)
+		{
+			// Na�ve Bayes algorithm (for 45 move instances or less)
+
+			for (vec_MeasuresResultsAtMoveEnd::iterator iter_MeasureResult = mast_NonAccelDirMeasuresResultsAtMoveEnd.begin(); iter_MeasureResult != mast_NonAccelDirMeasuresResultsAtMoveEnd.end(); ++ iter_MeasureResult)
+			{
+				if (iter_MeasureResult->muc_MeasureId != eMeasureId_AxDevAvg_Dir_NP && iter_MeasureResult->muc_MeasureId != eMeasureId_AyDevAvg_Dir_NP && iter_MeasureResult->muc_MeasureId != eMeasureId_AzDevAvg_Dir_NP)
+				{
+					f_SqrStatisticalDistance += pow(iter_MeasureResult->mf_Value - *iter_Means, 2) * (*iter_InvertedCovariances);
+					++ uc_MeasuresUsedForScoringCount;
+				}
+
+				++ iter_Means;
+				++ iter_InvertedCovariances;
+			}
+		}
+		else
+		{
+			// Mahalanobis algorithm (for more than 45 move instances)
+
+			vec_Floats af_Deviations;
+			af_Deviations.reserve((u8)mast_NonAccelDirMeasuresResultsAtMoveEnd.size());
+
+			for (vec_MeasuresResultsAtMoveEnd::iterator iter_MeasureResult = mast_NonAccelDirMeasuresResultsAtMoveEnd.begin(); iter_MeasureResult != mast_NonAccelDirMeasuresResultsAtMoveEnd.end(); ++ iter_MeasureResult)
+			{
+				if (iter_MeasureResult->muc_MeasureId != eMeasureId_AxDevAvg_Dir_NP && iter_MeasureResult->muc_MeasureId != eMeasureId_AyDevAvg_Dir_NP && iter_MeasureResult->muc_MeasureId != eMeasureId_AzDevAvg_Dir_NP)
+				{
+					af_Deviations.push_back(iter_MeasureResult->mf_Value - *iter_Means);
+					++ uc_MeasuresUsedForScoringCount;
+				}
+				else
+				{
+					af_Deviations.push_back(0.0f);
+				}
+
+				++ iter_Means;
+			}
+
+			u8 uc_InvCovariancesMatrixRowIndex = 0;
+
+			for (vec_Floats::iterator iter_Deviation = af_Deviations.begin(); iter_Deviation != af_Deviations.end(); ++ iter_Deviation)
+			{
+				u8 uc_InvCovariancesMatrixColumnIndex = 0;
+
+				for (vec_Floats::iterator iter_TranspDeviation = af_Deviations.begin(); iter_TranspDeviation != af_Deviations.end(); ++ iter_TranspDeviation)
+				{
+					if (uc_InvCovariancesMatrixColumnIndex >= uc_InvCovariancesMatrixRowIndex)
+					{
+						float f_SqrDistanceToAdd = (*iter_Deviation) * (*iter_TranspDeviation) * (*iter_InvertedCovariances);
+						if (uc_InvCovariancesMatrixColumnIndex > uc_InvCovariancesMatrixRowIndex)
+							f_SqrDistanceToAdd *= 2.0f;
+
+						f_SqrStatisticalDistance += f_SqrDistanceToAdd;
+
+						++ iter_InvertedCovariances;
+					}
+
+					++ uc_InvCovariancesMatrixColumnIndex;
+				}
+
+				++ uc_InvCovariancesMatrixRowIndex;
+			}
+		}
+
+        // compute and return statistical distance
+
+        return (mf_LastMoveStatisticalDistance = sqrtf(f_SqrStatisticalDistance / uc_MeasuresUsedForScoringCount));
+	}
+
+	float ScoreManager::fGetLastMoveRatioScore()
+	{
+        float f_LastMoveStatisticalDistance = fGetLastMoveStatisticalDistance();
+		float f_LastMoveRatioScore = ToolsInterface::fGetRatioScoreFromStatisticalDistance(f_LastMoveStatisticalDistance, mf_MoveStatDistLowThreshold, mf_MoveStatDistHighThreshold);
+
+		return f_LastMoveRatioScore;
+	}
+
+	float ScoreManager::fGetLastMovePercentageScore()
+	{
+		return 100.0f * fGetLastMoveRatioScore();
+	}
+
+	float ScoreManager::fGetLastMoveEnergyAmount(float _f_AccelDevNormOverAccelNormUseRatio)
+	{		
+		if (maf_EnergyMeansResultsAtMoveEnd.size() < 2)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : ScoreManager::fGetLastMoveEnergyAmount() has been called but some energy means results are missing, so energy can't be computed.");
+			return - 1.0f;
+		}
+
+        Clamp(_f_AccelDevNormOverAccelNormUseRatio, 0.0f, 1.0f);
+
+		float f_AccelNormAverageStartingFromZero = maf_EnergyMeansResultsAtMoveEnd[0] - 1.0f;
+		if (f_AccelNormAverageStartingFromZero < 0.0f)
+			f_AccelNormAverageStartingFromZero = 0.0f;
+
+		return (1.0f - _f_AccelDevNormOverAccelNormUseRatio) * f_AccelNormAverageStartingFromZero + _f_AccelDevNormOverAccelNormUseRatio * maf_EnergyMeansResultsAtMoveEnd[1];
+	}
+
+	float ScoreManager::fGetLastMoveEnergyFactor(float _f_AccelDevNormOverAccelNormUseRatio)
+	{		
+		if (maf_EnergyMeansResultsAtMoveEnd.size() < 2)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : ScoreManager::fGetLastMoveEnergyFactor() has been called but some energy means results are missing, so energy can't be computed.");
+			return - 1.0f;
+		}
+
+		if (mpst_MoveClassifier->maf_EnergyMeans.size() < 2)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : ScoreManager::fGetLastMoveEnergyFactor() has been called but classifier do not contains enough energy data, so energy can't be computed.");
+			return - 1.0f;
+		}
+
+		if (mpst_MoveClassifier->ml_ScoringAlgorithmType == 0)
+		{
+			ASSERT_MOVESPACE(false, "Movespace LIB : fGetLastMoveEnergyFactor() can't compute anything as it has no useable classifier. Don't forget to call StopMoveAnalysis() before.");
+			return - 1.0f;
+		}
+
+        Clamp(_f_AccelDevNormOverAccelNormUseRatio, 0.0f, 1.0f);
+
+		return (1.0f - _f_AccelDevNormOverAccelNormUseRatio) * (maf_EnergyMeansResultsAtMoveEnd[0] / mpst_MoveClassifier->maf_EnergyMeans[0])
+			+ _f_AccelDevNormOverAccelNormUseRatio * (maf_EnergyMeansResultsAtMoveEnd[1] / mpst_MoveClassifier->maf_EnergyMeans[1]);
+	}
+
+	float ScoreManager::fGetSignalValue(u8 _uc_SignalId)
+	{
+		AbstractSignal* p_Signal = pGetSignalById(_uc_SignalId);
+		return p_Signal ? p_Signal->fGetValue() : (float) 0xffffffff;
+	}
+
+	bool ScoreManager::bUpdateFromProgressRatioAndAccels(float _f_ProgressRatio, float _f_AccelX, float _f_AccelY, float _f_AccelZ)
+	{
+		bool b_SignalsAndMeasuresHaveBeenUpdated = false;
+
+		if (mf_CurrentSignalSmoothingFrequency == - 1.0f)
+		{
+			UpdateSignalsAndMeasures(_f_ProgressRatio, _f_AccelX, _f_AccelY, _f_AccelZ);
+			b_SignalsAndMeasuresHaveBeenUpdated = true;
+		}
+		else
+		{
+			if (_f_ProgressRatio > mf_SignalSmoothingNextProgressRatio)
+			{
+				float f_SignalSmoothingStepSizeInProgressRatio = 1.0f / (mf_GameMoveDuration * mf_CurrentSignalSmoothingFrequency);
+
+                if (_f_ProgressRatio > mf_SignalSmoothingNextProgressRatio + f_SignalSmoothingStepSizeInProgressRatio || mul_SignalSmoothing_UpdatesCount == 0)
+                {
+                    // if no usable sample inside last signal smoothing step : cancel smoothing feature for the rest of the move
+
+                    mf_CurrentSignalSmoothingFrequency = - 1.0f;
+                    UpdateSignalsAndMeasures(_f_ProgressRatio, _f_AccelX, _f_AccelY, _f_AccelZ);
+                }
+				else
+				{
+					// update signals measures using smoothed accels
+
+					float f_ProgressRatio = mf_SignalSmoothingNextProgressRatio - 0.5f * f_SignalSmoothingStepSizeInProgressRatio;
+					float f_AccelX = mf_SignalSmoothing_AccelXSum / mul_SignalSmoothing_UpdatesCount;
+					float f_AccelY = mf_SignalSmoothing_AccelYSum / mul_SignalSmoothing_UpdatesCount;
+					float f_AccelZ = mf_SignalSmoothing_AccelZSum / mul_SignalSmoothing_UpdatesCount;
+
+					UpdateSignalsAndMeasures(f_ProgressRatio, f_AccelX, f_AccelY, f_AccelZ);
+
+					// update signal smoothing next progress ratio
+
+					mf_SignalSmoothingNextProgressRatio += f_SignalSmoothingStepSizeInProgressRatio;
+					mul_SignalSmoothing_UpdatesCount = 0;
+					mf_SignalSmoothing_AccelXSum = 0.0f;
+					mf_SignalSmoothing_AccelYSum = 0.0f;
+					mf_SignalSmoothing_AccelZSum = 0.0f;
+				}
+
+				b_SignalsAndMeasuresHaveBeenUpdated = true;
+			}
+
+			// update updates count and accels sums
+
+            if (mf_CurrentSignalSmoothingFrequency != - 1.0f)
+            {
+                ++ mul_SignalSmoothing_UpdatesCount;
+                mf_SignalSmoothing_AccelXSum += _f_AccelX;
+                mf_SignalSmoothing_AccelYSum += _f_AccelY;
+                mf_SignalSmoothing_AccelZSum += _f_AccelZ;
+            }
+		}
+
+		return b_SignalsAndMeasuresHaveBeenUpdated;
+	}
+
+	float ScoreManager::fGetAutoCorrelationValidationTime(float _f_StepTimeShift, float _f_MaxTimeShift, float _f_ValidationRatioThreshold, bool _b_DontComputeIfIgnored)
+	{
+		if ((_b_DontComputeIfIgnored && mul_CustomizationFlags & eCCF_IgnoreAutoCorrelation) || _f_ValidationRatioThreshold == - 1.0f)
+			return - 6.0f;
+
+		// center auto correlation signal if not done anymore (to handle the case of iterative computation)
+
+		CenterAutoCorrelationSignalIfNotPerformedAlready();
+
+		// iterate every time step on max time to determine if auto correlation is validated
+
+		float f_NonShiftedAutoCorrelationNormalizedIntegral = fComputeAutoCorrelationNormalizedIntegral(0.0f);
+		if (f_NonShiftedAutoCorrelationNormalizedIntegral == - 1.0f)
+			return - 7.0f;
+
+		float f_MinAutoCorrelationRatio = HUGE_POSITIVE_VALUE;
+		float f_PermissiveMaxTimeShift = _f_MaxTimeShift + 0.001f;	// to avoid float precision issues
+
+		for (float f_TimeShift = _f_StepTimeShift; f_TimeShift < f_PermissiveMaxTimeShift; f_TimeShift += _f_StepTimeShift)
+		{
+			float f_AutoCorrelationNormalizedIntegral = fComputeAutoCorrelationNormalizedIntegral(f_TimeShift);
+			if (f_AutoCorrelationNormalizedIntegral == - 1.0f)
+				return - 8.0f;
+
+			float f_AutoCorrelationRatio = f_AutoCorrelationNormalizedIntegral / f_NonShiftedAutoCorrelationNormalizedIntegral;
+
+			if (f_AutoCorrelationRatio < f_MinAutoCorrelationRatio)
+				f_MinAutoCorrelationRatio = f_AutoCorrelationRatio;
+
+			if (f_MinAutoCorrelationRatio < 0.0f && f_AutoCorrelationRatio > _f_ValidationRatioThreshold) // autocorrelation ratio goes negative when user performs back-and-forth movements (shake)
+				return mul_CustomizationFlags & eCCF_IgnoreAutoCorrelation ? - f_TimeShift : f_TimeShift;
+		}
+
+		// no auto correlation validation
+
+		return - 9.0f;
+	}
+
+	// ===============================================================================================================================================================================================
+	// other internal functions
+	// ===============================================================================================================================================================================================
+
+	void ScoreManager::CreateSignalsAndMeasures(u64 _u64_MeasuresSetBitfield)
+	{
+		// base signals creation
+
+		CreateBaseSignal(eSignalId_Base_ProgressRatio);
+		CreateBaseSignal(eSignalId_Base_Ax);
+		CreateBaseSignal(eSignalId_Base_Ay);
+		CreateBaseSignal(eSignalId_Base_Az);
+		
+		// advanced signals definition
+		
+		vec_SignalsDefs ast_SignalDefs;
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AxDev,					eSignalCalcId_Derivative,		eSignalId_Base_Ax,			eSignalId_Base_ProgressRatio							));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AyDev,					eSignalCalcId_Derivative,		eSignalId_Base_Ay,			eSignalId_Base_ProgressRatio							));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AzDev,					eSignalCalcId_Derivative,		eSignalId_Base_Az,			eSignalId_Base_ProgressRatio							));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AccelNorm,				eSignalCalcId_Norm3D,			eSignalId_Base_Ax,			eSignalId_Base_Ay,					eSignalId_Base_Az	));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AccelDevNorm,				eSignalCalcId_Norm3D,			eSignalId_AxDev,			eSignalId_AyDev,					eSignalId_AzDev		));
+
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AccelNormAvg_NP,			eSignalCalcId_Average,			eSignalId_AccelNorm																	));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AccelDevNormAvg_NP,		eSignalCalcId_Average,			eSignalId_AccelDevNorm																));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AxDevAvg_Dir_NP,			eSignalCalcId_Average,			eSignalId_AxDev																		));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AyDevAvg_Dir_NP,			eSignalCalcId_Average,			eSignalId_AyDev																		));
+		ast_SignalDefs.push_back(stSignalDefinition(	eSignalId_AzDevAvg_Dir_NP,			eSignalCalcId_Average,			eSignalId_AzDev																		));
+
+		// measures definition
+
+		vec_MeasuresDefs ast_MeasureDefs;
+
+		ast_MeasureDefs.push_back(stMeasureDefinition(	eMeasureId_AccelNormAvg_NP,			eMeasureCalcId_SplitToNParts,		eSignalId_AccelNormAvg_NP,			eSignalId_Base_ProgressRatio	));
+		ast_MeasureDefs.push_back(stMeasureDefinition(	eMeasureId_AccelDevNormAvg_NP,		eMeasureCalcId_SplitToNParts,		eSignalId_AccelDevNormAvg_NP,		eSignalId_Base_ProgressRatio	));
+		ast_MeasureDefs.push_back(stMeasureDefinition(	eMeasureId_AxDevAvg_Dir_NP,			eMeasureCalcId_SplitToNParts,		eSignalId_AxDevAvg_Dir_NP,			eSignalId_Base_ProgressRatio	));
+		ast_MeasureDefs.push_back(stMeasureDefinition(	eMeasureId_AyDevAvg_Dir_NP,			eMeasureCalcId_SplitToNParts,		eSignalId_AyDevAvg_Dir_NP,			eSignalId_Base_ProgressRatio	));
+		ast_MeasureDefs.push_back(stMeasureDefinition(	eMeasureId_AzDevAvg_Dir_NP,			eMeasureCalcId_SplitToNParts,		eSignalId_AzDevAvg_Dir_NP,			eSignalId_Base_ProgressRatio	));
+
+		// create wished measures empty list
+
+		vec_WishedMeasures ast_WishedMeasures;
+		u64 u64_EnergyRequiredMeasuresBitfield = ENERGY_REQUIRED_MEASURES_BITFIELD;	// can't directly use macro in flag/mask comparisons (give a wrong result)
+
+		// add used-for-scoring measures
+
+		for (u8 uc_MeasureId = 0; uc_MeasureId < eMeasureId_COUNT; ++ uc_MeasureId)
+		{
+			if (_u64_MeasuresSetBitfield & ((u64)1 << uc_MeasureId))
+			{
+				bool b_AlsoUsedForEnergy = mb_EnergyComputationIsRequired && ((u64_EnergyRequiredMeasuresBitfield & ((u64)1 << uc_MeasureId)));
+				ast_WishedMeasures.push_back(stWishedMeasures(uc_MeasureId, true, b_AlsoUsedForEnergy));
+			}
+		}
+
+		// add only-used-for-energy-computation measures
+
+		if (mb_EnergyComputationIsRequired)
+		{
+			for (u8 uc_MeasureId = 0; uc_MeasureId < eMeasureId_COUNT; ++ uc_MeasureId)
+			{
+				if (u64_EnergyRequiredMeasuresBitfield & ((u64)1 << uc_MeasureId))
+				{
+					if (!(_u64_MeasuresSetBitfield & ((u64)1 << uc_MeasureId)))
+						ast_WishedMeasures.push_back(stWishedMeasures(uc_MeasureId, false, true));				
+				}
+			}
+		}
+
+		// create advanced signals and measures
+
+		for (vec_WishedMeasures::iterator iter_WishedMeasure = ast_WishedMeasures.begin(); iter_WishedMeasure != ast_WishedMeasures.end(); ++ iter_WishedMeasure)
+		{
+			for (vec_MeasuresDefs::iterator iter_MeasureDef = ast_MeasureDefs.begin(); iter_MeasureDef != ast_MeasureDefs.end(); ++ iter_MeasureDef)
+			{
+				if (iter_MeasureDef->muc_MeasureId == iter_WishedMeasure->muc_Id)
+					CreateMeasureAndNeededAdvancedSignals(*iter_MeasureDef, ast_SignalDefs, iter_WishedMeasure->mb_UsedForScoringComputation, iter_WishedMeasure->mb_UsedForEnergyComputation);
+			}
+		}
+	}
+
+	void ScoreManager::CreateBaseSignal(u8 _uc_SignalId)
+	{
+		mast_Signals.push_back(stSignal(_uc_SignalId, new(BaseSignal)));
+	}
+
+	void ScoreManager::CreateAdvancedSignalIfNotDoneYet(u8 _uc_SignalId, vec_SignalsDefs& _ast_SignalDefs)
+	{
+		for (vec_SignalsDefs::iterator iter_SignalDef = _ast_SignalDefs.begin(); iter_SignalDef != _ast_SignalDefs.end(); ++ iter_SignalDef)
+		{
+			stSignalDefinition& st_ThisSignalDef = *iter_SignalDef;
+
+			if (st_ThisSignalDef.muc_SignalId == _uc_SignalId)
+			{
+				if (st_ThisSignalDef.mb_MarkedAsUsed)
+					continue;
+
+				vec_Ids& auc_SignalIdsUsedBySignal = st_ThisSignalDef.mauc_SourceSignalIds;
+				for (vec_Ids::iterator iter_SignalId = auc_SignalIdsUsedBySignal.begin(); iter_SignalId != auc_SignalIdsUsedBySignal.end(); ++ iter_SignalId)
+				{
+					if (*iter_SignalId > eSignalId_Base_Az)
+						CreateAdvancedSignalIfNotDoneYet(*iter_SignalId, _ast_SignalDefs);
+				}
+
+				switch (st_ThisSignalDef.me_CalculusId)
+				{
+					case eSignalCalcId_Derivative:					CreateAdvancedSignal<Signal_Derivative>(st_ThisSignalDef.muc_SignalId, st_ThisSignalDef.mauc_SourceSignalIds[0], st_ThisSignalDef.mauc_SourceSignalIds[1]); break;
+					case eSignalCalcId_Norm3D:						CreateAdvancedSignal<Signal_Norm3D>(st_ThisSignalDef.muc_SignalId, st_ThisSignalDef.mauc_SourceSignalIds[0], st_ThisSignalDef.mauc_SourceSignalIds[1], st_ThisSignalDef.mauc_SourceSignalIds[2]); break;
+					case eSignalCalcId_Average:						CreateAdvancedSignal<Signal_Average>(st_ThisSignalDef.muc_SignalId, st_ThisSignalDef.mauc_SourceSignalIds[0]); break;
+					case eSignalCalcId_None:						break;
+				}
+
+				st_ThisSignalDef.mb_MarkedAsUsed = true;
+			}
+		}
+	}
+
+	void ScoreManager::CreateMeasureAndNeededAdvancedSignals(stMeasureDefinition& _st_MeasureDef, vec_SignalsDefs& _ast_SignalDefs, bool _b_UsedForScoringComputation, bool _b_UsedForEnergyComputation)
+	{
+		// create signals needed by the measure
+
+		vec_Ids& auc_SignalIdsUsedByMeasure = _st_MeasureDef.mauc_SourceSignalIds;
+
+		for (vec_Ids::iterator iter_SignalId = auc_SignalIdsUsedByMeasure.begin(); iter_SignalId != auc_SignalIdsUsedByMeasure.end(); ++ iter_SignalId)
+			CreateAdvancedSignalIfNotDoneYet(*iter_SignalId, _ast_SignalDefs);
+
+		// create measure (now that needed signals have been created)
+
+		switch (_st_MeasureDef.me_CalculusId)
+		{
+			case eMeasureCalcId_SplitToNParts:
+			{
+				for (u8 uc_PartIndex = 1; uc_PartIndex <= muc_MoveAnalysisPartsCount; ++ uc_PartIndex)
+					CreateMeasure<Measure_ValueInPart>(_st_MeasureDef.muc_MeasureId, _st_MeasureDef.mauc_SourceSignalIds[0], _st_MeasureDef.mauc_SourceSignalIds[1], _b_UsedForScoringComputation, _b_UsedForEnergyComputation, uc_PartIndex);
+			}
+			break;
+
+			case eMeasureCalcId_None:	break;
+		}
+	}
+
+	void ScoreManager::SetBaseSignalValue(u8 _uc_SignalId, float _f_Value)
+	{
+		BaseSignal* p_Source = (BaseSignal*)pGetSignalById(_uc_SignalId);
+
+		if (p_Source)
+			p_Source->SetValue(_f_Value);
+		else
+			ASSERT_MOVESPACE(false, "Movespace LIB : cannot set base signal values if ScoreManager::Init() have not been called before.");
+	}
+
+	void ScoreManager::DestroySignalsAndMeasures()
+	{
+		for (vec_Signals::iterator iter_Signal = mast_Signals.begin(); iter_Signal != mast_Signals.end(); ++ iter_Signal)
+			FreeFuncPtr(iter_Signal->mp_Signal);
+
+		mast_Signals.clear();
+
+		for (vec_Measures::iterator iter_Measure = mast_Measures.begin(); iter_Measure != mast_Measures.end(); ++ iter_Measure)
+			FreeFuncPtr(iter_Measure->mp_Measure);
+
+		mast_Measures.clear();
+	}
+
+	void ScoreManager::ResetSignalsAndMeasures()
+	{
+		for (vec_Signals::iterator iter_Signal = mast_Signals.begin(); iter_Signal != mast_Signals.end(); ++ iter_Signal)
+			iter_Signal->mp_Signal->ResetParams();
+
+		for (vec_Measures::iterator iter_Measure = mast_Measures.begin(); iter_Measure != mast_Measures.end(); ++ iter_Measure)
+			iter_Measure->mp_Measure->ResetParams();
+	}
+
+	void ScoreManager::UpdateSignalsAndMeasures(float _f_ProgressRatio, float _f_AccelX, float _f_AccelY, float _f_AccelZ)
+	{
+		// acquire base signals values
+
+		SetBaseSignalValue(eSignalId_Base_ProgressRatio, _f_ProgressRatio);
+		SetBaseSignalValue(eSignalId_Base_Ax, _f_AccelX);
+		SetBaseSignalValue(eSignalId_Base_Ay, _f_AccelY);
+		SetBaseSignalValue(eSignalId_Base_Az, _f_AccelZ);
+
+		// update every signals and measures
+
+		if (mb_FirstUpdateHasOccurred)
+		{
+			for (vec_Signals::iterator iter_Signal = mast_Signals.begin(); iter_Signal != mast_Signals.end(); ++ iter_Signal)
+			{
+				iter_Signal->mp_Signal->Update();
+
+				if (iter_Signal->muc_Id == eSignalId_AccelNorm)
+					StoreAutoCorrelationAccelNormSample(_f_ProgressRatio, iter_Signal->mp_Signal->fGetValue());
+			}
+
+			for (vec_Measures::iterator iter_Measure = mast_Measures.begin(); iter_Measure != mast_Measures.end(); ++ iter_Measure)
+				iter_Measure->mp_Measure->Update();
+		}
+		else
+		{
+			for (vec_Signals::iterator iter_Signal = mast_Signals.begin(); iter_Signal != mast_Signals.end(); ++ iter_Signal)
+			{
+				if (iter_Signal->mp_Signal->bMustUpdateFirstTimeAsNextTimes())
+					iter_Signal->mp_Signal->Update();
+				else
+					iter_Signal->mp_Signal->UpdateSpeciallyForFirstTime();
+
+				if (iter_Signal->muc_Id == eSignalId_AccelNorm)
+					StoreAutoCorrelationAccelNormSample(_f_ProgressRatio, iter_Signal->mp_Signal->fGetValue());
+			}
+
+			for (vec_Measures::iterator iter_Measure = mast_Measures.begin(); iter_Measure != mast_Measures.end(); ++ iter_Measure)
+			{
+				if (iter_Measure->mp_Measure->bMustUpdateFirstTimeAsNextTimes())
+					iter_Measure->mp_Measure->Update();
+				else
+					iter_Measure->mp_Measure->UpdateSpeciallyForFirstTime();
+			}
+
+			mb_FirstUpdateHasOccurred = true;
+		}
+	}
+
+	void ScoreManager::StoreAutoCorrelationAccelNormSample(float _f_ProgressRatio, float _f_AccelNorm)
+	{
+		mast_AutoCorrelationSignal.push_back(stAutoCorrelationAccelNormSample(_f_ProgressRatio * mf_GameMoveDuration, _f_AccelNorm));
+
+		mf_AutoCorrelationAccelNormsSum += _f_AccelNorm;
+	}
+
+	AbstractSignal* ScoreManager::pGetSignalById(u8 _uc_SignalId)
+	{
+		for (vec_Signals::iterator iter_Signal = mast_Signals.begin(); iter_Signal != mast_Signals.end(); ++ iter_Signal)
+		{
+			if (iter_Signal->muc_Id == _uc_SignalId)
+				return iter_Signal->mp_Signal;
+		}
+
+		return NULL;
+	}
+
+	void ScoreManager::ClearMoveClassifierStruct()
+	{
+		mpst_MoveClassifier->ml_ScoringAlgorithmType = 0;
+        mpst_MoveClassifier->maf_Means.clear();
+        mpst_MoveClassifier->maf_InvertedCovariances.clear();
+        mpst_MoveClassifier->maf_EnergyMeans.clear();
+	}
+
+	bool ScoreManager::bFillMoveClassifierStructFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return false; 
+
+		bool b_EndiannessSwapRequired = bIsEndiannessSwapRequired(_pc_ClassifierFileData);
+
+		// jump to first useful data position in header
+
+		int* pl_ClassifierFilePosition = (int*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_MEANS_COUNT - c_ClassifierFormatCompatibilityOffset);
+
+		// get scoring algorithm and proceed if different from 0.0f
+
+		mpst_MoveClassifier->ml_ScoringAlgorithmType = ulGetEndiannessCompatibleU32(*pl_ClassifierFilePosition, b_EndiannessSwapRequired);
+		if (mpst_MoveClassifier->ml_ScoringAlgorithmType == 0)
+			return false;
+
+		// get means and inverted covariances data count
+
+		u8 uc_MeansCount = (u8)abs(mpst_MoveClassifier->ml_ScoringAlgorithmType);
+		u16 ui_InvertedCovariancesCount = mpst_MoveClassifier->ml_ScoringAlgorithmType > 0 ? uc_MeansCount : uc_MeansCount * (uc_MeansCount + 1) / 2;
+		++ pl_ClassifierFilePosition;
+
+		// get energy data count
+
+		u8 uc_EnergyMeansCount = (u8)ulGetEndiannessCompatibleU32(*pl_ClassifierFilePosition, b_EndiannessSwapRequired);
+		++ pl_ClassifierFilePosition;
+
+		// ignore sub-classifiers int (not-used)
+ 		
+ 		++ pl_ClassifierFilePosition;
+
+		float* pf_ClassifierFilePosition = (float*)(void*)pl_ClassifierFilePosition;
+
+		// check if file data size is at awaited size
+
+		if (_ul_ClassifierFileSize != CLASSIFIER_FILE_HEADER_SIZE - c_ClassifierFormatCompatibilityOffset + (uc_MeansCount + ui_InvertedCovariancesCount + uc_EnergyMeansCount) * 4)
+			return false;
+
+		// get means data
+
+		for (u8 uc_MeanIndex = 0; uc_MeanIndex < uc_MeansCount; ++ uc_MeanIndex)
+		{
+			mpst_MoveClassifier->maf_Means.push_back(fGetEndiannessCompatibleFloat(*pf_ClassifierFilePosition, b_EndiannessSwapRequired));
+			++ pf_ClassifierFilePosition;
+		}
+
+		// get inverted covariances data
+
+		for (u16 ui_InvertedCovarianceIndex = 0; ui_InvertedCovarianceIndex < ui_InvertedCovariancesCount; ++ ui_InvertedCovarianceIndex)
+		{
+			mpst_MoveClassifier->maf_InvertedCovariances.push_back(fGetEndiannessCompatibleFloat(*pf_ClassifierFilePosition, b_EndiannessSwapRequired));
+			++ pf_ClassifierFilePosition;
+		}
+
+		// get energy means data
+
+		for (u8 uc_EnergyMeanIndex = 0; uc_EnergyMeanIndex < uc_EnergyMeansCount; ++ uc_EnergyMeanIndex)
+		{
+			mpst_MoveClassifier->maf_EnergyMeans.push_back(fGetEndiannessCompatibleFloat(*pf_ClassifierFilePosition, b_EndiannessSwapRequired));
+			++ pf_ClassifierFilePosition;
+		}
+
+		return true;
+	}
+
+	float ScoreManager::fComputeSqrDistFromAccelAvgResultAndClassifierData(const stVec3& _v_AccelAvgResult, const stVec3& _v_AccelAvgMean, const stVec3& _v_AccelAvgInvertedCovariance)
+	{
+		return (pow(_v_AccelAvgResult.x - _v_AccelAvgMean.x, 2) * _v_AccelAvgInvertedCovariance.x
+			+ pow(_v_AccelAvgResult.y - _v_AccelAvgMean.y, 2) * _v_AccelAvgInvertedCovariance.y
+			+ pow(_v_AccelAvgResult.z - _v_AccelAvgMean.z, 2) * _v_AccelAvgInvertedCovariance.z) / 3;
+	}
+
+	float ScoreManager::fComputeSqrDistFromAccelAvgResultAndClassifierData(const stPartAccelAvg& _st_PartAccelAvg)
+	{
+		return (pow(_st_PartAccelAvg.mv_PartAccelAvgResults.x - _st_PartAccelAvg.mv_PartAccelAvgMeans.x, 2) * _st_PartAccelAvg.mv_PartAccelAvgInvertedCovariances.x
+			+ pow(_st_PartAccelAvg.mv_PartAccelAvgResults.y - _st_PartAccelAvg.mv_PartAccelAvgMeans.y, 2) * _st_PartAccelAvg.mv_PartAccelAvgInvertedCovariances.y
+			+ pow(_st_PartAccelAvg.mv_PartAccelAvgResults.z - _st_PartAccelAvg.mv_PartAccelAvgMeans.z, 2) * _st_PartAccelAvg.mv_PartAccelAvgInvertedCovariances.z) / 3;
+	}
+
+	c8 ScoreManager::cGetClassifierFormatCompatibilityOffset(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		c8 c_ClassifierFormatCompatibilityOffset;
+
+		// get classifier format compatibility offset is version is handled, otherwise return - 1
+
+		switch (ToolsInterface::ulGetClassifierFormatVersionNumberFromFileData(_pc_ClassifierFileData))
+		{
+			case CLASSIFIER_FORMAT_VERSION_NUMBER_FORCE10PARTS:
+			case CLASSIFIER_FORMAT_VERSION_NUMBER_WITHOUT_AC_AND_DIR_SETTINGS:	c_ClassifierFormatCompatibilityOffset = 2 * sizeof(float); break;
+			case CLASSIFIER_FORMAT_VERSION_NUMBER_WITH_AC_AND_DIR_SETTINGS:
+			case CLASSIFIER_FORMAT_VERSION_NUMBER_SUBCLASSIFIERS_SUPPORT:		c_ClassifierFormatCompatibilityOffset = 0; break;
+			default:															return - 1;
+		}
+
+		// get classifier compatibility offset while checking classifier min size
+
+		if (_ul_ClassifierFileSize < CLASSIFIER_FILE_HEADER_SIZE - c_ClassifierFormatCompatibilityOffset)
+			return - 1;
+
+		// return classifier format compatibility offset
+
+		return c_ClassifierFormatCompatibilityOffset;
+	}
+
+	u8 ScoreManager::ucGetMoveAnalysisPartsCounts(float _f_MoveDuration)
+	{
+		if (mul_ClassifierFormatVersionNumberToUse == CLASSIFIER_FORMAT_VERSION_NUMBER_FORCE10PARTS)
+			return 10;
+
+		return (u8)(_f_MoveDuration * 30.0f / ACCEL_SAMPLES_MIN_COUNT_PER_PART_AT_30_FPS);
+	}
+
+	void ScoreManager::CenterAutoCorrelationSignalIfNotPerformedAlready()
+	{
+		if (!mb_AutoCorrelationSignalHasAlreadyBeenCentered)
+		{
+			float f_TranslateToCenterOffset = mf_AutoCorrelationAccelNormsSum / mast_AutoCorrelationSignal.size();
+
+			for (vec_AutoCorrelationSignal::iterator iter_AutoCorrelationSignal = mast_AutoCorrelationSignal.begin(); iter_AutoCorrelationSignal != mast_AutoCorrelationSignal.end(); ++ iter_AutoCorrelationSignal)
+				iter_AutoCorrelationSignal->mf_AccelNorm -= f_TranslateToCenterOffset;
+
+			mb_AutoCorrelationSignalHasAlreadyBeenCentered = true;
+		}
+	}
+
+	float ScoreManager::fComputeAutoCorrelationNormalizedIntegral(float _f_TimeShift)
+	{	
+		// we need at least 2 elements in auto correlation signal to perform integral computation
+
+		if (mast_AutoCorrelationSignal.size() < 2)
+			return - 1.0f;
+
+		// search shifted starting auto correlation sample
+
+		vec_AutoCorrelationSignal::iterator iter_ShiftedAutoCorrelationSignal = mast_AutoCorrelationSignal.begin();
+
+		if (_f_TimeShift > 0.0f)
+		{
+			vec_AutoCorrelationSignal::iterator iter_AutoCorrelationLastElement = mast_AutoCorrelationSignal.end() - 1;	// max prev sample can be before-latest element, at max
+
+			while (iter_ShiftedAutoCorrelationSignal != iter_AutoCorrelationLastElement)
+			{
+				if (iter_ShiftedAutoCorrelationSignal->mf_Time > _f_TimeShift)
+					break;
+
+				++ iter_ShiftedAutoCorrelationSignal;
+			}
+
+			if (iter_ShiftedAutoCorrelationSignal == iter_AutoCorrelationLastElement)
+				return - 1.0f;
+		}
+
+		// proceed to integral computation : start from shifted correlation signal to compare with base correlation signal
+
+		vec_AutoCorrelationSignal::iterator iter_AutoCorrelationSignal = mast_AutoCorrelationSignal.begin();
+
+		float f_PrevAccelNormProduct = iter_AutoCorrelationSignal->mf_AccelNorm * iter_ShiftedAutoCorrelationSignal->mf_AccelNorm;
+		float f_PrevAccelTime = 0.5f * (iter_AutoCorrelationSignal->mf_Time + iter_ShiftedAutoCorrelationSignal->mf_Time);
+
+		++ iter_AutoCorrelationSignal;
+		++ iter_ShiftedAutoCorrelationSignal;
+
+		float f_IntegralResult = 0.0f;
+		float f_IntegrationTotalTime = 0.0f;
+
+		do
+		{
+			float f_CurAccelNormsProduct = iter_AutoCorrelationSignal->mf_AccelNorm * iter_ShiftedAutoCorrelationSignal->mf_AccelNorm;
+			float f_CurAccelTime = 0.5f * (iter_AutoCorrelationSignal->mf_Time + iter_ShiftedAutoCorrelationSignal->mf_Time);
+			float f_DeltaTime = f_CurAccelTime - f_PrevAccelTime;
+
+			f_IntegralResult += 0.5f * (f_PrevAccelNormProduct + f_CurAccelNormsProduct) * f_DeltaTime;
+			f_IntegrationTotalTime += f_DeltaTime;
+
+			f_PrevAccelNormProduct = f_CurAccelNormsProduct;
+			f_PrevAccelTime = f_CurAccelTime;
+
+			++ iter_AutoCorrelationSignal;
+			++ iter_ShiftedAutoCorrelationSignal;
+		}
+		while (iter_ShiftedAutoCorrelationSignal != mast_AutoCorrelationSignal.end());
+
+		// return time-normalized integral result
+
+		return f_IntegralResult / f_IntegrationTotalTime;
+	}
+
+    void ScoreManager::ModifyTuningParam_LowDistanceTheshold(float _f_LowDistanceThesholdModifier)
+    {
+        mf_LowDistanceThresholdModifier = _f_LowDistanceThesholdModifier;
+    }
+
+    void ScoreManager::ModifyTuningParam_HighDistanceTheshold(float _f_HighDistanceThesholdModifier)
+    {
+        mf_HighDistanceThresholdModifier = _f_HighDistanceThesholdModifier;
+    }
+
+    void ScoreManager::ModifyTuningParam_ShakeSensitivity(float _f_ShakeSensitivityModifier)
+    {
+        mf_ShakeSensitivityModifier = _f_ShakeSensitivityModifier;
+    }
+
+    void ScoreManager::ModifyTuningParam_DirectionSensitivity(float _f_DirectionSensitivityModifier)
+    {
+        mf_DirectionSensitivityModifier = _f_DirectionSensitivityModifier;
+    }
+
+	// ===============================================================================================================================================================================================
+	// static tools interface functions
+	// ===============================================================================================================================================================================================
+
+	u32 ScoreManager::ToolsInterface::ulGetClassifierFormatVersionNumberFromFileData(char* _pc_ClassifierFileData)
+	{
+		// jump to classifier format version number position and return its value (don't check classifier size to avoid infinite loop with cGetClassifierDataPositionOffsetIfFormatIsV2() fct)
+
+		return ulGetEndiannessCompatibleU32(*(int*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_FORMAT_VERSION_NUMBER), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+    char* ScoreManager::ToolsInterface::GetMoveNameFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+    {
+        // get classifier compatibility offset while checking classifier min size
+
+        c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+        if (c_ClassifierFormatCompatibilityOffset == - 1)
+            return NULL;
+
+        // jump to move name position and return its value
+
+        return _pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_MOVE_NAME;
+    }
+
+    char* ScoreManager::ToolsInterface::GetSongNameFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+    {
+        // get classifier compatibility offset while checking classifier min size
+
+        c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+        if (c_ClassifierFormatCompatibilityOffset == - 1)
+            return NULL;
+
+        // jump to song name position and return its value
+
+        return _pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_SONG_NAME;
+    }
+
+	char* ScoreManager::ToolsInterface::GetMoveMeasureSetBitfieldNameFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return NULL;
+
+		// jump to measure set bitfield name position and return its value
+
+		return _pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_MEASURE_SET_NAME;
+	}
+
+	float ScoreManager::ToolsInterface::fGetMoveDurationFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return - 1.0f;
+
+		// jump to duration position and return its value
+
+		return fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_DURATION), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	float ScoreManager::ToolsInterface::fGetMoveStatDistLowThresholdFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return - 1.0f;
+
+		// jump to low threshold position and return its value
+
+		return fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_STAT_DIST_LOW_THRESHOLD), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	float ScoreManager::ToolsInterface::fGetMoveStatDistHighThresholdFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return - 1.0f;
+
+		// jump to high threshold position and return its value
+
+		return fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_STAT_DIST_HIGH_THRESHOLD), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	float ScoreManager::ToolsInterface::fGetMoveAutoCorrelationThresholdFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return - 1.0f;
+
+		// jump to auto-correlation threshold position and return its value
+
+		return fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_AUTOCORRELATION_THRESHOLD), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	float ScoreManager::ToolsInterface::fGetMoveDirectionImpactFactorFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return - 1.0f;
+
+		// jump to direction impact factor position and return its value
+
+		return fGetEndiannessCompatibleFloat(*(float*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_DIRECTION_IMPACT_FACTOR), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	u64 ScoreManager::ToolsInterface::u64GetMoveMeasureSetBitfieldFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return 0;
+
+		// jump to measure set bitfield position and return its value
+
+		return u64GetEndiannessCompatibleU64(*(u64*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_MEASURES_SET - c_ClassifierFormatCompatibilityOffset), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	u32 ScoreManager::ToolsInterface::ulGetMoveCustomizationFlagsFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return 0;
+
+		// jump to customization flags position and return its value
+
+		return ulGetEndiannessCompatibleU32(*(int*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_CUSTOMIZATION_FLAGS - c_ClassifierFormatCompatibilityOffset), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	u8 ScoreManager::ToolsInterface::ucGetMeasuresCountFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return 0;
+
+		// jump to measure means count position and return its value
+
+		return (u8)ulGetEndiannessCompatibleU32(*(int*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_MEANS_COUNT - c_ClassifierFormatCompatibilityOffset), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	u8 ScoreManager::ToolsInterface::ucGetEnergyMeasuresCountFromFileData(char* _pc_ClassifierFileData, u32 _ul_ClassifierFileSize)
+	{
+		// get classifier compatibility offset while checking classifier min size
+
+		c8 c_ClassifierFormatCompatibilityOffset = cGetClassifierFormatCompatibilityOffset(_pc_ClassifierFileData, _ul_ClassifierFileSize);
+		if (c_ClassifierFormatCompatibilityOffset == - 1)
+			return 0;
+
+		// jump to energy means count position and return its value
+
+		return (u8)ulGetEndiannessCompatibleU32(*(int*)(_pc_ClassifierFileData + CLASSIFIER_FILE_DATA_POSITION_ENERGY_MEANS_COUNT - c_ClassifierFormatCompatibilityOffset), bIsEndiannessSwapRequired(_pc_ClassifierFileData));
+	}
+
+	float ScoreManager::ToolsInterface::fGetRatioScoreFromStatisticalDistance(float _f_StatisticalDistance, float _f_StatDistLowThreshold, float _f_StatDistHighThreshold)
+	{
+		float f_RatioScore;
+
+		if (_f_StatDistLowThreshold == - 1.0f || _f_StatDistHighThreshold == - 1.0f)
+		{
+			f_RatioScore = 0.0f;
+		}
+		else
+		{
+			f_RatioScore = (_f_StatisticalDistance - _f_StatDistHighThreshold) / (_f_StatDistLowThreshold - _f_StatDistHighThreshold);
+
+			if (f_RatioScore < 0.0f)
+				f_RatioScore = 0.0f;
+			else if (f_RatioScore > 1.0f)
+				f_RatioScore = 1.0f;
+		}
+
+		return f_RatioScore;
+	}
+}

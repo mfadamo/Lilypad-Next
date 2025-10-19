@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Set script title (displayed in the terminal)
+echo "Lilypad Environment Launcher"
+echo "---------------------------------------------------"
+echo ""
+
+# Define variables for clarity and consistency
+SCRIPT_NAME=$(basename "$0")
+DEVELOPMENT_FLAG="--dev"
+NODE_ENV_DEV="development"
+NODE_ENV_PROD="production"
+
+# --- Basic Usage Help ---
+# Check if the first argument is -h or --help (case-insensitive)
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    echo "Usage: $SCRIPT_NAME [$DEVELOPMENT_FLAG]"
+    echo ""
+    echo "  $DEVELOPMENT_FLAG     - Runs the application in development mode (starts webpack watcher and app)."
+    echo "  (no argument)       - Runs the application in production mode (runs build then starts the app)."
+    echo ""
+    exit 0 # Exit after showing help
+fi
+
+# --- Check for Development Flag ---
+IS_DEVELOPMENT=false
+# Check if the first argument exactly matches the development flag
+if [[ "$1" == "$DEVELOPMENT_FLAG" ]]; then
+    IS_DEVELOPMENT=true
+elif [[ -n "$1" ]]; then # Check if argument is not empty and not the dev flag
+    echo "ERROR: Unrecognized argument \"$1\"."
+    echo ""
+    # Show usage if an unrecognized argument is provided
+    echo "Usage: $SCRIPT_NAME [$DEVELOPMENT_FLAG]"
+    echo ""
+    exit 1 # Exit with an error code
+fi
+
+# --- Environment Setup and Execution ---
+if [ "$IS_DEVELOPMENT" = true ]; then
+    echo "Using development environment..."
+    # Export NODE_ENV so it's available to child processes (like npm)
+    export NODE_ENV="$NODE_ENV_DEV"
+    echo "Setting NODE_ENV=$NODE_ENV"
+    echo ""
+
+    echo "Starting development build watcher (npm run watch)..."
+    # Run in the background using '&'
+    # The output of this command will still appear in the terminal
+    npm run watch &
+    WATCHER_PID=$! # Capture the Process ID of the background job
+    echo "Watcher started in the background with PID $WATCHER_PID."
+
+    echo "Starting the application (npm run start)..."
+    # Run in the background using '&'
+    npm run start &
+    APP_PID=$! # Capture the Process ID of the background job
+    echo "Application start command issued in the background with PID $APP_PID."
+
+    echo ""
+    echo "Script execution potentially completed (check logs/output of background processes)."
+    echo "Development watcher and application should be running in the background."
+    echo "Press Ctrl+C to stop the script and background processes (may require multiple presses)."
+
+    # Optional: Add a trap to kill background processes when the script receives SIGINT (Ctrl+C) or exits
+    # trap "echo 'Stopping background processes...'; kill $WATCHER_PID $APP_PID 2>/dev/null" EXIT
+
+else
+    echo "Using production environment..."
+    # Export NODE_ENV for the production build and start process
+    export NODE_ENV="$NODE_ENV_PROD"
+    echo "Setting NODE_ENV=$NODE_ENV"
+    echo ""
+
+    echo "Building and starting the application (npm run start:prod)..."
+    # Run synchronously. The script will wait for this command to finish.
+    npm run start:prod
+    # Check the exit code of the previous command ($?)
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to build and start the application in production mode."
+        exit 1 # Exit with an error code
+    fi
+    echo "Production build and start command completed."
+
+fi
+
+echo ""
+echo "Script finished."
+exit 0 # Exit successfully

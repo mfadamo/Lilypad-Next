@@ -1,0 +1,308 @@
+:root {
+    --PlayerColorBlue: #0048ff;
+    --PlayerColorRed: #ff7700;
+    --PlayerColorGreen: #00ff40;
+    --PlayerColorPink: #d400ff;
+    --PlayerColorOrange: #00ffd0;
+    --PlayerColorPurple: #8000ff;
+}
+
+#RecapScreen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 0.8em;
+    overflow: hidden;
+    font-family: "Font1", sans-serif;
+    color: white;
+    box-sizing: border-box;
+}
+
+.recap-header {
+    text-align: center;
+    margin-bottom: 1em;
+    animation: header-fade-in 1s ease-out;
+}
+
+.recap-song-title {
+    font-size: 0.3em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+    text-shadow: 0.05em 0.05em 0.1em rgba(0, 0, 0, 0.5);
+}
+
+.recap-song-artist {
+    font-size: 0.18em;
+    font-weight: normal;
+    opacity: 0.8;
+    margin: 0.1em 0 0 0;
+}
+
+.recap-leaderboard-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+}
+
+.recap-winner-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.recap-others-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1.2em;
+    width: 90%;
+}
+
+.player-recap-card {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 0.04em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.4em;
+    box-sizing: border-box;
+    animation: card-enter 0.5s ease-out forwards;
+    opacity: 0;
+    transform: translateY(2em);
+    position: relative;
+    width: 2.5em;
+    height: 4em;
+    margin: 0 0.2em;
+}
+
+.player-recap-card.winner {
+    width: 2.7em;
+    height: 4.3em;
+    border-color: #ffd700;
+    box-shadow: 0 0 1em #ffd70080;
+    animation-delay: 0s !important;
+    top: -5%;
+}
+
+
+.recap-others-container .player-recap-card:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.recap-others-container .player-recap-card:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.recap-others-container .player-recap-card:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.recap-others-container .player-recap-card:nth-child(4) {
+    animation-delay: 0.5s;
+}
+
+.recap-others-container .player-recap-card:nth-child(5) {
+    animation-delay: 0.6s;
+}
+
+.winner-crown {
+    font-size: 0.5em;
+    margin-bottom: 0.1em;
+}
+
+.player-rank {
+    position: absolute;
+    top: 0.2em;
+    left: 0.3em;
+    font-size: 0.2em;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.player-recap-card .player-name {
+    font-size: 0.22em;
+    font-weight: bold;
+    text-shadow: 0.03em 0.03em 0.05em black;
+    margin-bottom: 0.4em;
+    top: 7em;
+}
+
+.player-recap-card.winner .player-name {
+    font-size: 0.25em;
+}
+
+.recap-stars {
+    display: flex;
+    margin-bottom: 0.5em;
+    height: 0.35em;
+}
+
+.player-recap-card.winner .recap-stars {
+    height: 0.45em;
+    margin-bottom: 0.6em;
+}
+
+.recap-star {
+    width: 0.35em;
+    height: 0.35em;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.player-recap-card.winner .recap-star {
+    width: 0.45em;
+    height: 0.45em;
+    margin: 0 -0.06em;
+}
+
+.recap-star.unearned {
+    background-image: url(../../../../assets/texture/ui/star_outline.webp);
+    opacity: 0.5;
+}
+
+.recap-star.earned {
+    background-image: url(../../../../assets/texture/ui/star_glow.webp);
+    animation: star-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.player-recap-card.superstar .recap-star.earned {
+    background-image: url(../../../../assets/texture/ui/star_glow_plus.webp);
+}
+
+.player-recap-card.megastar .recap-star.earned {
+    background-image: url(../../../../assets/texture/ui/star_glow_plus_more.webp);
+}
+
+.score-progress-bar {
+    width: 85%;
+    height: 0.25em;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 1em;
+    margin-bottom: 0.4em;
+    overflow: hidden;
+}
+
+.player-recap-card.winner .score-progress-bar {
+    height: 0.3em;
+}
+
+.score-progress-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 1em;
+    transition: width 0.1s linear;
+}
+
+.player-recap-card.blue .score-progress-fill {
+    background-color: var(--PlayerColorBlue);
+}
+
+.player-recap-card.red .score-progress-fill {
+    background-color: var(--PlayerColorRed);
+}
+
+.player-recap-card.green .score-progress-fill {
+    background-color: var(--PlayerColorGreen);
+}
+
+.player-recap-card.pink .score-progress-fill {
+    background-color: var(--PlayerColorPink);
+}
+
+.player-recap-card.orange .score-progress-fill {
+    background-color: var(--PlayerColorOrange);
+}
+
+.player-recap-card.purple .score-progress-fill {
+    background-color: var(--PlayerColorPurple);
+}
+
+.player-score-value {
+    font-size: 0.28em;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+}
+
+.player-recap-card.winner .player-score-value {
+    font-size: 0.32em;
+}
+
+.recap-continue-button {
+    position: absolute;
+    bottom: 0em;
+    transform: translateX(-50%);
+    font-family: "Font1", sans-serif;
+    font-size: 0.3em;
+    padding: 0.3em 1.5em !important;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 2em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.5s, transform 0.3s, background-color 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    right: -2em;
+}
+
+.recap-continue-button:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+    animation: button-fade-in 0.5s 0.2s ease-out forwards;
+}
+
+.recap-continue-button:hover {
+    background-color: #0056b3;
+    transform: translateX(-50%) scale(1.05);
+}
+
+/* KEYFRAME ANIMATIONS */
+@keyframes header-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-1em);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes card-enter {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes star-appear {
+    0% {
+        transform: scale(0) rotate(-90deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes button-fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(1em);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

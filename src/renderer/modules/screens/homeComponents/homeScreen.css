@@ -1,0 +1,519 @@
+#HomeScreen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    overflow: hidden;
+    position: relative;
+}
+
+#HomeScreen .home-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.083em 0.167em;
+    /* 10px/120, 20px/120 */
+    height: 0.5em;
+    /* 60px/120 */
+}
+
+#HomeScreen .home-logo {
+    height: 0.333em;
+    /* 40px/120 */
+}
+
+#HomeScreen .profile-section {
+    display: flex;
+    align-items: center;
+    gap: 0.083em;
+    /* 10px/120 */
+}
+
+#HomeScreen .player-name {
+    font-size: 0.1em;
+    /* 12px/120 */
+    font-weight: 600;
+}
+
+#HomeScreen .avatar {
+    width: 0.366em;
+    /* 40px/120 × 1.1 */
+    height: 0.366em;
+    /* 40px/120 × 1.1 */
+    background-color: #ff5eb5;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#HomeScreen .avatar.focused {
+    box-shadow: 0 0 0 0.025em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .nav-sidebar {
+    position: absolute;
+    left: 0;
+    top: 0.667em;
+    /* 80px/120 */
+    bottom: 0;
+    width: 0.667em;
+    /* 80px/120 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1em;
+    /* 20px/120 */
+    z-index: 10;
+}
+
+#HomeScreen .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 0.55em;
+    /* 60px/120 × 1.1 */
+    height: 0.55em;
+    /* 60px/120 × 1.1 */
+    margin-bottom: 0.091em;
+    /* 10px/120 × 1.1 */
+    border-radius: 0.11em;
+    /* 12px/120 × 1.1 */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#HomeScreen .nav-item:hover,
+#HomeScreen .nav-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#HomeScreen .nav-item.focused {
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0.046em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .nav-item img {
+    width: 0.22em;
+    /* 24px/120 × 1.1 */
+    height: 0.22em;
+    /* 24px/120 × 1.1 */
+    margin-bottom: 0.036em;
+    /* 4px/120 × 1.1 */
+}
+
+#HomeScreen .nav-item span {
+    font-size: 0.11em;
+    text-align: center;
+}
+
+#HomeScreen .controller-button {
+    margin-top: auto;
+    margin-bottom: 0.167em;
+    /* 20px/120 */
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+#HomeScreen .home-content {
+    margin-left: 0.667em;
+    /* 80px/120 */
+    padding: 0.083em 0.167em;
+    /* 10px/120, 20px/120 */
+    height: calc(100% - 0.5em);
+    /* 100% - 60px/120 */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.167em;
+    /* 20px/120 */
+}
+
+#HomeScreen .song-spinner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #a239ca 0%, #4717f6 100%);
+    border-radius: 0.133em;
+    /* 16px/120 */
+    padding: 0.083em 0.167em;
+    /* 10px/120, 20px/120 */
+    margin-bottom: 0.083em;
+    /* 10px/120 */
+}
+
+#HomeScreen .spinner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.083em;
+    /* 10px/120 */
+}
+
+#HomeScreen .spin-icon {
+    width: 0.3em;
+    /* 36px/120 */
+    height: 0.3em;
+    /* 36px/120 */
+    animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#HomeScreen .spinner-text h3 {
+    font-size: 0.17em;
+    margin: 0 0 0.025em 0;
+}
+
+#HomeScreen .spinner-text p {
+    font-size: 0.12em;
+    margin: 0;
+    opacity: 0.8;
+}
+
+#HomeScreen .surprise-button {
+    background-color: #e91e63;
+    color: white;
+    border: none;
+    border-radius: 0.275em;
+    padding: 0.074em 0.184em;
+    font-size: 0.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0.036em 0.074em rgba(0, 0, 0, 0.3);
+    padding: 0.8em;
+}
+
+#HomeScreen .surprise-button:hover {
+    background-color: #ff4081;
+}
+
+#HomeScreen .surprise-button.focused {
+    background-color: #ff4081;
+    box-shadow: 0 0 0.046em 0.028em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .songs-carousel {
+    margin-bottom: 0.083em;
+}
+
+#HomeScreen .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.083em;
+}
+
+#HomeScreen .carousel-header h2 {
+    font-size: 0.158em;
+    margin: 0;
+}
+
+#HomeScreen .carousel-controls {
+    display: flex;
+    gap: 0.046em;
+}
+
+#HomeScreen .carousel-arrow {
+    width: 0.33em;
+    height: 0.33em;
+    border-radius: 50%;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 0.11em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#HomeScreen .carousel-arrow:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+#HomeScreen .carousel-arrow.focused {
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0.046em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .carousel-items {
+    display: flex;
+    gap: 0.125em;
+    overflow-x: auto;
+    padding: 0.083em;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+#HomeScreen .carousel-items::-webkit-scrollbar {
+    height: 0.067em;
+}
+
+#HomeScreen .carousel-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#HomeScreen .carousel-items::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 0.067em;
+}
+
+#HomeScreen .song-tile {
+    flex: 0 0 2.083em;
+    border-radius: 0.1em;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+#HomeScreen .song-tile:hover {
+    transform: translateY(-0.042em);
+}
+
+#HomeScreen .song-tile.focused {
+    box-shadow: 0 0 0.083em rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#HomeScreen .song-tile .song-cover {
+    width: 100%;
+    height: 1.167em;
+    object-fit: cover;
+}
+
+#HomeScreen .song-grid-item .song-cover {
+    height: 100%;
+    width: 30%;
+}
+
+#HomeScreen .song-tile .song-info {
+    padding: 0.083em;
+}
+
+#HomeScreen .song-tile .song-title {
+    font-size: 0.092em;
+    margin: 0 0 0.025em 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+#HomeScreen .song-tile .song-subtitle {
+    font-size: 0.075em;
+    margin: 0 0 0.042em 0;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#HomeScreen .difficulty-bars {
+    display: flex;
+    gap: 0.017em;
+}
+
+#HomeScreen .bar {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.1em;
+}
+
+#HomeScreen .bar.filled {
+    color: #ffc107;
+}
+
+#HomeScreen .filter-section {
+    margin-top: 0.167em;
+}
+
+#HomeScreen .filter-header h2 {
+    font-size: 0.155em;
+    margin: 0;
+}
+
+#HomeScreen .filter-header h2 {
+    font-size: 0.125em;
+    margin: 0;
+}
+
+#HomeScreen .filter-controls {
+    display: flex;
+    gap: 0.083em;
+}
+
+#HomeScreen .filter-dropdown {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 0.067em;
+    padding: 0.4em;
+    display: flex;
+    align-items: center;
+    gap: 0.042em;
+    cursor: pointer;
+    font-size: 0.1em;
+    position: relative;
+    display: block;
+    height: 2em;
+}
+
+#HomeScreen .filter-dropdown.focused {
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0.042em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .dropdown-arrow {
+    font-size: 0.067em;
+    opacity: 0.7;
+}
+
+#HomeScreen .category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.083em;
+    margin-bottom: 0.125em;
+}
+
+#HomeScreen .filter-button {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: none;
+    border-radius: 0.067em;
+    color: white;
+    padding: 1em 2em;
+    font-size: 0.075em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    /* gap: 0.042em; */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 3em;
+}
+
+#HomeScreen .filter-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#HomeScreen .filter-button.focused {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 0 0.042em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .filter-arrow {
+    font-size: 1em;
+    opacity: 0.7;
+    position: absolute;
+    top: 0.87em;
+    left: 0.6em;
+}
+
+#HomeScreen .songs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2.5em, 1fr));
+    gap: 0.125em;
+    margin-bottom: 0.167em;
+}
+
+#HomeScreen .song-grid-item {
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 0.1em;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#HomeScreen .song-grid-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-0.017em);
+}
+
+#HomeScreen .song-grid-item.focused {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-0.017em);
+    box-shadow: 0 0 0.058em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .song-tile .song-cover {
+    width: 100%;
+    /* height: 1.167em; */
+    object-fit: cover;
+    height: auto;
+    aspect-ratio: 1/1;
+}
+
+#HomeScreen .song-grid-item .song-grid-info {
+    flex: 1;
+    padding: 0.042em 0.083em;
+}
+
+#HomeScreen .song-grid-item .song-title {
+    font-size: 0.16em;
+    margin: 0 0 0.017em 0;
+}
+
+#HomeScreen .song-tile .song-subtitle {
+    font-size: 0.12em;
+    margin: 0 0 0.042em 0;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#HomeScreen .song-grid-item .song-subtitle {
+    font-size: 0.11em;
+    padding: 0;
+    margin: 0;
+}
+
+#HomeScreen .song-grid-item .difficulty-bars {
+    margin-right: 0.083em;
+}
+
+#HomeScreen .song-grid-item .bar {
+    font-size: 0.083em;
+}
+
+#HomeScreen .reset-filters-button {
+    display: block;
+    margin: 0 auto 0.167em;
+    background-color: transparent;
+    border: 0.017em solid rgba(255, 255, 255, 0.5);
+    border-radius: 0.067em;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.058em 0.167em;
+    font-size: 0.075em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#HomeScreen .reset-filters-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: white;
+    color: white;
+}
+
+#HomeScreen .reset-filters-button.focused {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    color: white;
+    box-shadow: 0 0 0.042em rgba(255, 255, 255, 0.8);
+}
+
+#HomeScreen .playlist-content, #HomeScreen .settings-content {
+    flex-direction: column;
+    font-size: 0.1em;
+    margin-left: 1em;
+}

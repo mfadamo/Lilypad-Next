@@ -1,0 +1,57 @@
+/* Container holds all rows and buttons */
+.cemuhook-conn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    padding: 2em;
+    width: 100%;
+    max-width: 30em;
+    margin: 0 auto;
+    position: absolute;
+    top: 0%;
+    font-size: 20%; /* Based on root FONT_SIZE */
+  }
+  
+  /* Each IP row with input and remove button */
+  .ip-row {
+    display: flex;
+    width: 100%;
+    gap: 0.5em;
+  }
+  
+  .ip-row input[type="text"] {
+    flex: 1;
+    padding: 0.5em;
+    font-size: 1em;
+    border: 0.1em solid #ccc;
+    border-radius: 0.5em;
+  }
+  
+  .ip-row button {
+    padding: 0.5em 1em;
+    font-size: 1em;
+    border: none;
+    background: #e74c3c;
+    color: white;
+    border-radius: 0.5em;
+    cursor: pointer;
+  }
+  
+  /* Add and Connect buttons styled similarly */
+  [uiname="add-ip"], [uiname="connect"] {
+    width: 100%;
+    padding: 0.75em;
+    font-size: 1em;
+    border: none;
+    background: #3498db;
+    color: white;
+    border-radius: 0.5em;
+    cursor: pointer;
+  }
+  
+  /* Mark successful handshake */
+  .ip-row input.ok {
+    border-color: #2ecc71;
+    box-shadow: 0 0 0.5em rgba(46, 204, 113, 0.5);
+  }

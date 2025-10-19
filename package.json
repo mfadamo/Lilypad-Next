@@ -1,20 +1,59 @@
 {
-  "name": "just-dance-fanmade",
+  "name": "lilypad",
   "version": "1.0.0",
-  "main": "game/game.js",
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-packager . just-dance-fanmade --overwrite --asar=true --platform=win32 --arch=ia32 --out=./compiled"
+  "description": "An open-source Just Dance game replicate using Electron",
+  "main": "src/main.js",
+  "author": "Ibratabian17 <ibratabian@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/PartyService/LilypadNext.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PartyService/LilypadNext.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "sass": "^1.62.1"
+  "keywords": [
+    "electron",
+    "just dance",
+    "game",
+    "replica"
+  ],
+  "scripts": {
+    "clean": "rimraf dist build release",
+    "watch": "webpack --config webpack.config.js --watch",
+    "start": "electron .",
+    "build": "webpack --config webpack.config.js",
+    "start:prod": "npm run build && electron .",
+    "package": "npm run build && electron-packager . --platform=win32,darwin,linux --arch=x64 --out=release --icon=assets/icons/icon --prune=true --overwrite",
+    "package:win": "npm run build && electron-packager . --platform=win32 --arch=x64 --out=release --icon=assets/icons/icon.ico --prune=true --overwrite",
+    "package:mac": "npm run build && electron-packager . --platform=darwin --arch=x64 --out=release --icon=assets/icons/icon.icns --prune=true --overwrite",
+    "package:linux": "npm run build && electron-packager . --platform=linux --arch=x64 --out=release --icon=assets/icons/icon.png --prune=true --overwrite",
+    "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
-    "electron-packager": "^17.1.1",
-    "electron": "^23.1.1"
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-loader": "^9.1.3",
+    "css-loader": "^6.8.1",
+    "electron": "^35.1.5",
+    "electron-packager": "^17.1.2",
+    "html-webpack-plugin": "^5.5.3",
+    "rimraf": "^6.0.1",
+    "style-loader": "^3.3.3",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@herberttn/bytenode-webpack-plugin": "^2.3.1",
+    "bytenode": "^1.5.7",
+    "crc": "^4.3.2",
+    "crc32": "^0.2.2",
+    "dashjs": "^5.0.0",
+    "dds-parser": "^1.0.1",
+    "decode-dxt": "^1.0.1",
+    "everpolate": "^0.0.3",
+    "file-loader": "^6.2.0",
+    "mp4box": "^0.5.4",
+    "parse-dds": "^1.2.1",
+    "plyr": "^3.7.8",
+    "ws": "^8.18.1"
   }
 }
