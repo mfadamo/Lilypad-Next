@@ -100,7 +100,7 @@ export default class HudController {
 
         this.songVar = {
             Beat: beats,
-            nohudOffset: this.songData.ubiartConverted ? this.songData.videoOffset + 100 : this.songData.nohudOffset || 0,
+            nohudOffset: this.songData.ubiartConverted ? this.songData.videoOffset : this.songData.nohudOffset || 0,
             audioOffset: this.songData.audioOffset || this.songData.ubiartConverted ? this.songData.videoOffset : this.songData.nohudOffset || 0,
             Odieven: this.isEven(Math.round(beats[0] / ((beats[1] - beats[0])))),
             Lyrics: lyrics,
