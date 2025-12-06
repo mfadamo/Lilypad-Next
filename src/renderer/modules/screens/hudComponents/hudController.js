@@ -21,7 +21,7 @@ export default class HudController {
         this.videoManager = new VideoManager(gamevar, songData);
 
         // --- Hybrid Master Clock State ---
-        this._masterClockTime = 0; 
+        this._masterClockTime = 0;
         this._lastVideoTime = 0;
         this._lastSyncTime = 0;
         this._isClockRunning = false;
@@ -34,6 +34,9 @@ export default class HudController {
 
         this.setupSongVariables();
         this.setupUIElements();
+
+        this.phoneOffsets = new Map();
+        this.latencyMap = new Map();
 
         this.pictosManager.setAtlas(pictosAtlas);
         this.initPhoneControllers();
@@ -61,13 +64,13 @@ export default class HudController {
         if (!this._isUserPaused) return;
         this._isUserPaused = false;
         this.videoManager.playMedia();
-        }
+    }
 
     pause() {
         if (this._isUserPaused) return;
         this._isUserPaused = true;
         this.videoManager.pauseMedia();
-          }
+    }
 
     playMedia() {
         console.log("Starting song playback via external call.");
@@ -144,7 +147,7 @@ export default class HudController {
                 this._isClockRunning = true;
             } else if (state === 'paused' || state === 'buffering') {
                 if (this._isClockRunning) {
-                    this._updateMasterClock(); 
+                    this._updateMasterClock();
                     this._isClockRunning = false;
                 }
             }
@@ -173,7 +176,7 @@ export default class HudController {
         console.log("Initializing HUD loop");
         let isInitLine = true;
         let lastPeriodicSync = 0;
-        const SYNC_INTERVAL_MS = 100; 
+        const SYNC_INTERVAL_MS = 100;
 
         const loopUI = setInterval(() => {
             this._updateMasterClock();
@@ -330,6 +333,55 @@ export default class HudController {
         } catch (err) { }
     }
 
+    // --- hudController.js ---
+
+    // ... inside initPhoneControllers method ...
+
+    initPhoneControllers() {
+        if (!window.phoneController) return;
+        console.log("Initializing phone motion tracking");
+
+        if (!window.players) window.players = {};
+        
+        // Initialize history buffer
+        Object.values(window.players).forEach(p => { 
+            if (!p.motionHistory) p.motionHistory = []; 
+        });
+
+        window.phoneController.on('motion', ({ phoneId, data, timestamp }) => {
+            try {
+                const player = window.players[`player${phoneId + 1}`];
+                if (!player || !player.isActive) return;
+
+                // 1. Get the auto-calculated offset from PhoneController
+                const offset = window.phoneController.getPhoneOffset(phoneId);
+
+                // 2. Correct the timestamp to Game Time
+                const correctedTime = timestamp + offset;
+
+                // 3. Store in history buffer
+                if (!player.motionHistory) player.motionHistory = [];
+                
+                player.motionHistory.push({
+                    timestamp: correctedTime,
+                    accel: [data.x, data.y, data.z]
+                });
+
+                // 4. Keep buffer size manageable (keep last 5 seconds)
+                const cleanupThreshold = this.songVar.currentTime - 5000;
+                if (player.motionHistory.length > 0 && player.motionHistory[0].timestamp < cleanupThreshold) {
+                    const keepIdx = player.motionHistory.findIndex(m => m.timestamp >= cleanupThreshold);
+                    if (keepIdx > 0) {
+                        player.motionHistory = player.motionHistory.slice(keepIdx);
+                    }
+                }
+
+            } catch (err) { console.error("Error processing motion data:", err); }
+        });
+    }
+
+    // ... inside updatePlayerMoves method ...
+
     updatePlayerMoves() {
         const now = this.songVar.currentTime;
         const nohud = this.songVar.nohudOffset;
@@ -342,12 +394,23 @@ export default class HudController {
 
             while (idx < movesArr.length) {
                 const move = movesArr[idx];
-                if ((move.time + nohud + move.duration + 50) > now) break;
-                //add 50ms end delay incase the wireless sending data delayed
+                
+                // Wait until the move is completely finished + 200ms buffer for network lag
+                if ((move.time + nohud + move.duration + 200) > now) break;
+
+                const moveStartTime = move.time + nohud;
+                const moveEndTime = moveStartTime + move.duration;
+
                 for (const player of Object.values(window.players)) {
                     if (player.isActive && player.currentSelectedCoach === coachIdx) {
                         const playerIndex = player.id - 1;
-                        const moveMotionData = player.moveMotionData?.[`${move.time}`];
+                        
+                        // Extract data from history using corrected timestamps
+                        const moveMotionData = (player.motionHistory || []).filter(sample => 
+                            sample.timestamp >= moveStartTime && 
+                            sample.timestamp <= moveEndTime
+                        );
+
                         if (moveMotionData && moveMotionData.length > 0 && move.name) {
                             mgr.scoreMove(playerIndex, `${move.name}.msm`, moveMotionData, !!move.goldMove, coachIdx, move.duration)
                                 .catch(err => console.error(`Scoring error for player ${playerIndex + 1}: ${err}`));
@@ -367,27 +430,44 @@ export default class HudController {
         console.log("Initializing phone motion tracking");
 
         if (!window.players) window.players = {};
-        Object.values(window.players).forEach(p => { if (!p.moveMotionData) p.moveMotionData = {}; });
+        
+        Object.values(window.players).forEach(p => { 
+            if (!p.motionHistory) p.motionHistory = []; 
+        });
 
         window.phoneController.on('motion', ({ phoneId, data, timestamp }) => {
             try {
                 const player = window.players[`player${phoneId + 1}`];
                 if (!player || !player.isActive) return;
 
-                const coachIdx = player.currentSelectedCoach || 0;
-                const moves = this.songVar[`Moves${coachIdx}`] || [];
-                const activeMove = moves.find(move => {
-                    const start = move.time + this.songVar.nohudOffset;
-                    const end = start + move.duration;
-                    return this.songVar.currentTime >= start && this.songVar.currentTime <= end;
+                const offset = window.phoneController.getPhoneOffset(phoneId);
+                const gameSystemTime = timestamp + offset;
+
+                let motionSongTime;
+                
+                if (this._lastSyncTime > 0) {
+                    motionSongTime = gameSystemTime - (this._lastSyncTime - this._lastVideoTime);
+                } else {
+                    const now = performance.now();
+                    const currentSongTime = this.songVar.currentTime;
+                    motionSongTime = gameSystemTime - (now - currentSongTime);
+                }
+
+                if (!player.motionHistory) player.motionHistory = [];
+                
+                player.motionHistory.push({
+                    timestamp: motionSongTime, 
+                    accel: [data.x, data.y, data.z]
                 });
 
-                if (activeMove) {
-                    const motionSample = { timestamp, accel: [data.x, data.y, data.z] };
-                    const moveKey = `${activeMove.time}`;
-                    if (!player.moveMotionData[moveKey]) player.moveMotionData[moveKey] = [];
-                    player.moveMotionData[moveKey].push(motionSample);
+                const cleanupThreshold = this.songVar.currentTime - 5000;
+                if (player.motionHistory.length > 0 && player.motionHistory[0].timestamp < cleanupThreshold) {
+                    const keepIdx = player.motionHistory.findIndex(m => m.timestamp >= cleanupThreshold);
+                    if (keepIdx > 0) {
+                        player.motionHistory = player.motionHistory.slice(keepIdx);
+                    }
                 }
+
             } catch (err) { console.error("Error processing motion data:", err); }
         });
     }

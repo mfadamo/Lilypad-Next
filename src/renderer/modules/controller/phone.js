@@ -24,6 +24,9 @@ export class PhoneController {
     this.connected = false;
     this.handlers = {};
     this.activePhones = new Set();
+    this.phoneOffsets = new Map();
+    this.latencies = new Map();  
+    this.pingInterval = null; 
 
     this.EVENT_TYPES = {
       CONNECT: 'connect',
@@ -53,11 +56,13 @@ export class PhoneController {
       this.ws.onopen = () => {
         this.connected = true;
         this._emit(this.EVENT_TYPES.CONNECT);
+        this._startPingLoop();
         resolve();
       };
 
       this.ws.onclose = () => {
         this.connected = false;
+        this._stopPingLoop();
         this._emit(this.EVENT_TYPES.DISCONNECT);
       };
 
@@ -68,6 +73,34 @@ export class PhoneController {
 
       this.ws.onmessage = (e) => this._handleMessage(e.data);
     });
+  }
+
+  _startPingLoop() {
+    this._stopPingLoop();
+    this.pingInterval = setInterval(() => {
+      if (this.connected && this.activePhones.size > 0) {
+        this.broadcast({
+          type: 'ping',
+          sendTime: performance.now()
+        });
+      }
+    }, 1000);
+  }
+
+  _stopPingLoop() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  /**
+   * Get the time offset for a specific phone
+   * @param {number} phoneId 
+   * @returns {number} Offset in ms (Add this to phone time to get game time)
+   */
+  getPhoneOffset(phoneId) {
+    return this.phoneOffsets.get(phoneId) || 0;
   }
 
   /**
@@ -332,6 +365,22 @@ export class PhoneController {
             Object.assign(this.players[playerKey], msg.profile);
             console.log(`Player ${phoneId + 1} profile updated:`, this.players[playerKey]);
           }
+        }
+        break;
+
+      case 'pong':
+        if (phoneId !== undefined && msg.clientSendTime) {
+          const now = performance.now();
+          const rtt = now - msg.clientSendTime; // Round Trip Time
+          const latency = rtt / 2;
+          
+          // Offset = (GameReceiveTime - Latency) - PhoneSendTime
+          const offset = (now - latency) - msg.phoneReceiveTime;
+          
+          this.phoneOffsets.set(phoneId, offset);
+          this.latencies.set(phoneId, latency);
+          
+          console.debug(`Phone ${phoneId} sync: Latency=${latency.toFixed(1)}ms, Offset=${offset.toFixed(1)}ms`);
         }
         break;
 

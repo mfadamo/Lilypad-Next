@@ -15,7 +15,7 @@ const MOVEMENT_DETECTION = {
 };
 
 const JUDGMENT_THRESHOLDS = {
-  PERFECT: 91,
+  PERFECT: 90,
   SUPER: 80,
   GOOD: 50,
   OK: 15,
