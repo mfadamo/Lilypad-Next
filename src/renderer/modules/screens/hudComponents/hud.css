@@ -6,12 +6,6 @@
     #lyrics,
     #beat,
     .coach-image,
-    .feedback-perfect,
-    .feedback-yeah,
-    .feedback-good,
-    .feedback-ok,
-    .feedback-super,
-    .feedback-bad,
     #goldmove .layer {
         transform: translateZ(0);
         backface-visibility: hidden;
