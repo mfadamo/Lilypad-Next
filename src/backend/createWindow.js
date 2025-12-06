@@ -13,6 +13,7 @@ function createWindow() {
         center: true,
         show: false,
         webPreferences: {
+            backgroundThrottling: false,
             nodeIntegration: true,
             contextIsolation: false,
             preload: path.join(__dirname, '../preload.js'),
