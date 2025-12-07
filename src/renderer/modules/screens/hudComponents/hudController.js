@@ -298,7 +298,7 @@ export default class HudController {
             if (currentPicto && currentPicto.time + this.songVar.nohudOffset - this.songVar.PictosSlideDur < this.songVar.currentTime) {
                 const atlasImage = this.pictosAtlas.images[currentPicto.name];
                 const pictoInfo = this.pictosManager.ShowPictos(
-                    atlasImage ? (this.pictosAtlas.isUbiArt ? currentPicto.name : 'a') : `pictos/${currentPicto.name}`,
+                    atlasImage ? (this.pictosAtlas.isUbiArt ? currentPicto.name : 'a') : `${currentPicto.name}`,
                     atlasImage || [0, 0],
                     this.songVar.PictosSlideDur, this.songVar.PictosHideDur,
                     `${this.pictosAtlas.imageSize.width}x${this.pictosAtlas.imageSize.height}`
