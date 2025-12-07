@@ -5,6 +5,7 @@ import WebGLFeedBackParticleSystem from './particles/feedback.js';
 import StarManager from './starManager.js';
 
 const SCORING_CONFIG = {
+  ENABLE_DEBUG: false,
   G_FORCE: 9.81,
   MAX_SCORE: 13333,
   SENSOR_SMOOTHING_FREQUENCY: 60.0,
@@ -345,7 +346,7 @@ export default class PlayerScoreManager {
         finalJudgment = getJudgmentFromScore(rawScore, false);
       }
 
-      if (document.querySelector('.msp-debug') && ) {
+      if (SCORING_CONFIG.ENABLE_DEBUG && document.querySelector('.msp-debug')) {
         this.updateMspDebug(
           rawScore, 
           finalJudgment, 
