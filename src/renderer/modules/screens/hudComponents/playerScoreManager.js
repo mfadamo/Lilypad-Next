@@ -4,73 +4,68 @@ import MSP_LIB from '../../scoring/msp.js';
 import WebGLFeedBackParticleSystem from './particles/feedback.js';
 import StarManager from './starManager.js';
 
-const G_FORCE = 9.81;
-const MAX_SCORE = 13333;
-const SENSOR_SMOOTHING_FREQUENCY = 60.0;
+const SCORING_CONFIG = {
+  G_FORCE: 9.81,
+  MAX_SCORE: 13333,
+  SENSOR_SMOOTHING_FREQUENCY: 60.0,
 
-const MOVEMENT_DETECTION = {
-  STATIONARY_VARIANCE_THRESHOLD: 0.01,
-  MIN_TOTAL_ACCEL_CHANGE: 0.5,
-  MIN_VALID_SAMPLES: 10,
-};
+  MOVEMENT: {
+    STATIONARY_VARIANCE: 0.001,
+    MIN_TOTAL_ACCEL_CHANGE: 0.5,
+    MIN_VALID_SAMPLES: 8,
+  },
 
-const JUDGMENT_THRESHOLDS = {
-  PERFECT: 90,
-  SUPER: 80,
-  GOOD: 50,
-  OK: 15,
-};
+  THRESHOLDS: {
+    STAT_DIST_LOW: 1.0,
+    STAT_DIST_HIGH: 3.5,
+    AUTO_CORRELATION: 0.70,
+    DIRECTION_IMPACT: 1.0,
+  },
 
-const PERFECT_STREAK_THRESHOLDS = { HOT: 3, ON_FIRE: 6 };
-const PERFECT_STREAK_MULTIPLIERS = { NONE: 1.0, HOT: 1.03, ON_FIRE: 1.08 };
+  ENERGY: {
+    NO_MOVE_PENALTY_THRESHOLD: 0.16,
+    NO_MOVE_PENALTY_MULTIPLIER: 0.25,
+    SHAKE_DETECTED_MAX_SCORE: 0.40,
+  },
 
-/**
- * Energy calculation exactly from C++:
- * energyAmount = (1.0 - ratio) * (accelNormAvg - 1.0) + ratio * accelDevNormAvg
- * where accelNormAvg and accelDevNormAvg come from maf_EnergyMeansResultsAtMoveEnd
- */
-function calculateEnergyAmount(energyMeans, dampingRatio = 0.15) {
-  if (!energyMeans || energyMeans.length < 2) return -1.0;
-  
-  dampingRatio = Math.max(0, Math.min(1, dampingRatio));
-  
-  let accelNormAvgFromZero = energyMeans[0] - 1.0;
-  if (accelNormAvgFromZero < 0.0) {
-    accelNormAvgFromZero = 0.0;
+  JUDGMENTS: {
+    PERFECT: 90,
+    SUPER: 75,
+    GOOD: 45,
+    OK: 15,
+  },
+
+  STREAKS: {
+    THRESHOLDS: { HOT: 3, ON_FIRE: 6 },
+    MULTIPLIERS: { NONE: 1.0, HOT: 1.03, ON_FIRE: 1.08 }
   }
-  
-  return (1.0 - dampingRatio) * accelNormAvgFromZero + dampingRatio * energyMeans[1];
-}
+};
 
-/**
- * Energy factor (ratio of actual to expected)
- * Used for validation, not scoring
- */
 function calculateEnergyFactor(energyMeansResults, classifierEnergyMeans, dampingRatio = 0.5) {
-  if (!energyMeansResults || energyMeansResults.length < 2 || 
-      !classifierEnergyMeans || classifierEnergyMeans.length < 2) {
+  if (!energyMeansResults || energyMeansResults.length < 2 ||
+    !classifierEnergyMeans || classifierEnergyMeans.length < 2) {
     return -1.0;
   }
-  
+
   dampingRatio = Math.max(0, Math.min(1, dampingRatio));
-  
-  const factor0 = classifierEnergyMeans[0] !== 0 
-    ? energyMeansResults[0] / classifierEnergyMeans[0] 
+
+  const factor0 = classifierEnergyMeans[0] !== 0
+    ? energyMeansResults[0] / classifierEnergyMeans[0]
     : 0;
-  
-  const factor1 = classifierEnergyMeans[1] !== 0 
-    ? energyMeansResults[1] / classifierEnergyMeans[1] 
+
+  const factor1 = classifierEnergyMeans[1] !== 0
+    ? energyMeansResults[1] / classifierEnergyMeans[1]
     : 0;
-  
+
   return (1.0 - dampingRatio) * factor0 + dampingRatio * factor1;
 }
 
 const getJudgmentFromScore = (score, isGold) => {
   if (isGold) return score >= 70 ? "yeah" : "badgold";
-  if (score >= JUDGMENT_THRESHOLDS.PERFECT) return "perfect";
-  if (score >= JUDGMENT_THRESHOLDS.SUPER) return "super";
-  if (score >= JUDGMENT_THRESHOLDS.GOOD) return "good";
-  if (score >= JUDGMENT_THRESHOLDS.OK) return "ok";
+  if (score >= SCORING_CONFIG.JUDGMENTS.PERFECT) return "perfect";
+  if (score >= SCORING_CONFIG.JUDGMENTS.SUPER) return "super";
+  if (score >= SCORING_CONFIG.JUDGMENTS.GOOD) return "good";
+  if (score >= SCORING_CONFIG.JUDGMENTS.OK) return "ok";
   return "bad";
 };
 
@@ -89,7 +84,14 @@ export default class PlayerScoreManager {
     this.songVar.playerScore = this.songVar.playerScore || {};
 
     this.scoreManagerInstance = new MSP_LIB.ScoreManager();
-    this.scoreManagerInstance.Game().Init(-1, -1, -1, -1, SENSOR_SMOOTHING_FREQUENCY);
+
+    this.scoreManagerInstance.Game().Init(
+      SCORING_CONFIG.THRESHOLDS.STAT_DIST_LOW,
+      SCORING_CONFIG.THRESHOLDS.STAT_DIST_HIGH,
+      SCORING_CONFIG.THRESHOLDS.AUTO_CORRELATION,
+      SCORING_CONFIG.THRESHOLDS.DIRECTION_IMPACT,
+      SCORING_CONFIG.SENSOR_SMOOTHING_FREQUENCY
+    );
 
     this.modelFiles = this._loadModelFiles(songVar.modelsBuffer);
     this.particleSystems = this._initializeParticleSystems();
@@ -108,8 +110,8 @@ export default class PlayerScoreManager {
         if (buf && buf.name && buf.arrayBuffer) {
           files[buf.name.toLowerCase()] = arrayToBuffer(buf.arrayBuffer);
         }
-      } catch (e) { 
-        console.warn(`Error processing model buffer for "${buf.name}": ${e.message}`); 
+      } catch (e) {
+        console.warn(`Error processing model buffer for "${buf.name}": ${e.message}`);
       }
     });
     return files;
@@ -122,8 +124,8 @@ export default class PlayerScoreManager {
         const system = new WebGLFeedBackParticleSystem(canvas);
         systems.push(system);
         system.resizeCanvas();
-      } catch (e) { 
-        console.warn(`Error creating particle system: ${e.message}`); 
+      } catch (e) {
+        console.warn(`Error creating particle system: ${e.message}`);
       }
     });
     return systems;
@@ -158,35 +160,30 @@ export default class PlayerScoreManager {
     let totalChange = 0;
     for (let i = 1; i < samples.length; i++) {
       for (let j = 0; j < 3; j++) {
-        totalChange += Math.abs(samples[i].accel[j] - samples[i-1].accel[j]);
+        totalChange += Math.abs(samples[i].accel[j] - samples[i - 1].accel[j]);
       }
     }
-    totalChange /= G_FORCE;
+    totalChange /= SCORING_CONFIG.G_FORCE;
 
     const maxVariance = Math.max(...variance);
     const isStationary = (
-      maxVariance < MOVEMENT_DETECTION.STATIONARY_VARIANCE_THRESHOLD &&
-      totalChange < MOVEMENT_DETECTION.MIN_TOTAL_ACCEL_CHANGE
+      maxVariance < SCORING_CONFIG.MOVEMENT.STATIONARY_VARIANCE &&
+      totalChange < SCORING_CONFIG.MOVEMENT.MIN_TOTAL_ACCEL_CHANGE
     );
 
     return { variance, totalChange, isStationary, maxVariance };
   }
 
   _preprocessSamples(samples) {
-    if (!Array.isArray(samples) || samples.length === 0) {
-      return [];
-    }
-    
+    if (!Array.isArray(samples) || samples.length === 0) return [];
+
     const valid = samples.filter(s =>
-      s && 
-      typeof s.timestamp === 'number' && 
-      isFinite(s.timestamp) &&
-      Array.isArray(s.accel) && 
-      s.accel.length >= 3 &&
-      s.accel.every(v => typeof v === 'number' && isFinite(v))
+      s &&
+      typeof s.timestamp === 'number' && isFinite(s.timestamp) &&
+      Array.isArray(s.accel) && s.accel.length >= 3
     );
 
-    if (valid.length < MOVEMENT_DETECTION.MIN_VALID_SAMPLES) return [];
+    if (valid.length < SCORING_CONFIG.MOVEMENT.MIN_VALID_SAMPLES) return [];
 
     valid.sort((a, b) => a.timestamp - b.timestamp);
 
@@ -194,123 +191,76 @@ export default class PlayerScoreManager {
     for (let i = 1; i < valid.length; i++) {
       const curr = valid[i];
       const prev = unique[unique.length - 1];
-      
-      const timeSame = Math.abs(curr.timestamp - prev.timestamp) < 0.001;
-      const accelSame = curr.accel.every((v, j) => Math.abs(v - prev.accel[j]) < 0.00001);
-      
-      if (timeSame && accelSame) continue;
-      
+
+      const timeDiff = Math.abs(curr.timestamp - prev.timestamp);
+      if (timeDiff < 5) continue;
+
       unique.push(curr);
     }
-    
+
     return unique;
   }
 
-  /**
-   * Helper functions for the scoring model
-   */
-  _calculateEnergyScore(energyFactor) {
-    const idealMin = 0.75;
-    const idealMax = 1.25;
-    
-    if (energyFactor >= idealMin && energyFactor <= idealMax) {
-        return 1.0;
-    }
-    
-    if (energyFactor < idealMin) {
-        const diff = idealMin - energyFactor;
-        const decay = 1.5; 
-        return Math.exp(-decay * diff);
-    } else {
-        const diff = energyFactor - idealMax;
-        const decay = 0.5;
-        return Math.exp(-decay * diff);
-    }
-  }
+  _applyScoringModel(components, movementStats, customizationFlags) {
+    if (movementStats.isStationary) return 0;
 
-  _calculateDirectionScore(directionTendency) {
-    const linearMap = (directionTendency + 1.0) / 2.0;
-    return Math.pow(linearMap, 0.7);
-  }
+    let finalRatio = components.ratioScore;
 
-  /**
-   * Multiplicative model matching Just Dance behavior
-   * 
-   * The score is multiplicative, not additive:
-   * finalScore = baseRatio * energyModifier * directionModifier * shakeModifier
-   */
-  _applyScoringModel(components, movementStats, classifier, customizationFlags) {
-    if (movementStats.isStationary) {
-      return 0;
+    // Energy Floor: Penalty for small movements
+    if (components.playerEnergyAmount < SCORING_CONFIG.ENERGY.NO_MOVE_PENALTY_THRESHOLD) {
+      finalRatio *= SCORING_CONFIG.ENERGY.NO_MOVE_PENALTY_MULTIPLIER;
     }
 
-    const baseScore = components.ratioScore;
-
-    const ef = components.energyFactor;
-    if (ef < 0.05 || ef > 20.0) {
-      return 0;
-    }
-    const energyScore = this._calculateEnergyScore(ef);
-
-    const ignoreDirection = (customizationFlags & 0x01) !== 0;
-    let directionScore = 1.0;
-    if (!ignoreDirection && components.directionTendency !== undefined) {
-      directionScore = this._calculateDirectionScore(components.directionTendency);
-    }
-
+    // Shake Penalty
     const ignoreShake = (customizationFlags & 0x02) !== 0;
-    let shakeMultiplier = 1.0;
-    if (!ignoreShake && components.shakeTime !== undefined && components.shakeTime > 0) {
-      shakeMultiplier = 0.7;
+    if (!ignoreShake && components.shakeTime > 0) {
+      finalRatio = Math.min(finalRatio, SCORING_CONFIG.ENERGY.SHAKE_DETECTED_MAX_SCORE);
     }
 
-    const qualityWeight = 0.4;
-    const qualityModifier = energyScore * directionScore;
-    
-    let finalRatio = (baseScore * (1.0 - qualityWeight)) + (baseScore * qualityModifier * qualityWeight);
-    finalRatio *= shakeMultiplier;
+    // Direction Penalty
+    const ignoreDirection = (customizationFlags & 0x01) !== 0;
+    if (!ignoreDirection && components.directionTendency !== undefined) {
+      if (components.directionTendency < 0) {
+        const directionMultiplier = 1.0 + (components.directionTendency * 0.5);
+        finalRatio *= Math.max(0.1, directionMultiplier);
+      }
+    }
+
+    // Sticky Perfect
+    if (finalRatio > 0.96) finalRatio = 1.0;
 
     return Math.max(0, Math.min(1, finalRatio)) * 100;
   }
 
-
   async scoreMove(playerIndex, modelFileName, samples, goldMove, coachIdx, duration) {
     const fallbackJudgment = goldMove ? 'badgold' : 'bad';
-    const fallbackReturn = { 
-      score: 0, 
-      judgment: fallbackJudgment, 
-      adjustedScore: this.scores[playerIndex] || 0 
+    const fallbackReturn = {
+      score: 0,
+      judgment: fallbackJudgment,
+      adjustedScore: this.scores[playerIndex] || 0
     };
-    
+
     const originalSampleCount = Array.isArray(samples) ? samples.length : 0;
-    
-    if (originalSampleCount < MOVEMENT_DETECTION.MIN_VALID_SAMPLES) {
-      console.warn(`Too few samples: ${originalSampleCount}`);
+
+    if (originalSampleCount < SCORING_CONFIG.MOVEMENT.MIN_VALID_SAMPLES) {
       this.postPlayerFeedback(playerIndex, fallbackJudgment, goldMove, 0, coachIdx);
       return fallbackReturn;
     }
 
     const movementStats = this._calculateMovementStats(samples);
-    
+
     if (movementStats.isStationary) {
-      console.warn(
-        `STATIONARY DETECTED - Variance: ${movementStats.maxVariance.toFixed(4)}, ` +
-        `Change: ${movementStats.totalChange.toFixed(2)}G`
-      );
       this.postPlayerFeedback(playerIndex, fallbackJudgment, goldMove, 0, coachIdx);
       return fallbackReturn;
     }
 
     const cleanedSamples = this._preprocessSamples(samples);
 
-    if (cleanedSamples.length < MOVEMENT_DETECTION.MIN_VALID_SAMPLES) {
-      console.warn(
-        `Too few samples after cleaning: ${cleanedSamples.length}/${originalSampleCount}`
-      );
+    if (cleanedSamples.length < SCORING_CONFIG.MOVEMENT.MIN_VALID_SAMPLES) {
       this.postPlayerFeedback(playerIndex, fallbackJudgment, goldMove, 0, coachIdx);
       return fallbackReturn;
     }
-    
+
     const modelKey = modelFileName.toLowerCase();
     const classifierFileData = this.modelFiles[modelKey];
     if (!classifierFileData) {
@@ -322,9 +272,8 @@ export default class PlayerScoreManager {
       const gameInterface = this.scoreManagerInstance.Game();
       const mspTools = this.scoreManagerInstance.Tools();
       const gameMoveDurationSec = duration / 1000.0;
-      
+
       if (!gameInterface.bStartMoveAnalysis(classifierFileData, gameMoveDurationSec)) {
-        console.warn(`Failed to start move analysis for ${modelFileName}`);
         return fallbackReturn;
       }
 
@@ -333,48 +282,40 @@ export default class PlayerScoreManager {
       const moveDurationMs = tN - t0;
 
       if (moveDurationMs < 100) {
-        console.warn(`Move duration too short: ${moveDurationMs}ms`);
         return fallbackReturn;
       }
 
-      // Feed all samples to MSP for analysis
       for (const s of cleanedSamples) {
         const progressRatio = (s.timestamp - t0) / moveDurationMs;
-        if (progressRatio >= 0 && progressRatio <= 1.0) {
-          gameInterface.UpdateFromProgressRatioAndAccels(
-            progressRatio, 
-            s.accel[0] / G_FORCE, 
-            s.accel[1] / G_FORCE, 
-            s.accel[2] / G_FORCE
-          );
-        }
+        const clampedRatio = Math.max(0, Math.min(1, progressRatio));
+
+        gameInterface.UpdateFromProgressRatioAndAccels(
+          clampedRatio,
+          s.accel[0] / SCORING_CONFIG.G_FORCE,
+          s.accel[1] / SCORING_CONFIG.G_FORCE,
+          s.accel[2] / SCORING_CONFIG.G_FORCE
+        );
       }
 
       gameInterface.StopMoveAnalysis();
-      
-      // Get ALL data from MSP
+
       const classifier = mspTools.pstGetMoveClassifierStruct();
       const statisticalDistance = mspTools.fGetLastMoveStatisticalDistance();
-      const ratioScore = gameInterface.fGetLastMoveRatioScore(); // 0-1
-      
-      // Energy data
+      const ratioScore = gameInterface.fGetLastMoveRatioScore();
+
       const energyMeansResults = mspTools.afGetLastMoveEnergyMeansResults();
-      const playerEnergyAmount = gameInterface.fGetLastMoveEnergyAmount(0.15); // Use exact C++ damping
+      const playerEnergyAmount = gameInterface.fGetLastMoveEnergyAmount(0.15);
       const classifierEnergyMeans = classifier?.maf_EnergyMeans || [];
       const energyFactor = calculateEnergyFactor(energyMeansResults, classifierEnergyMeans, 0.5);
-      
-      // Direction data
+
       let directionTendency = 0;
-      const canComputeDirection = gameInterface.bCanComputeDirectionTendency();
-      if (canComputeDirection) {
+      if (gameInterface.bCanComputeDirectionTendency()) {
         directionTendency = gameInterface.fGetDirectionTendencyImpactOnScoreRatio();
       }
-      
-      // Shake detection
+
       const shakeTime = gameInterface.fGetAutoCorrelationValidationTime(0.05, 0.5);
-      
-      // Get customization flags from classifier
-      const customizationFlags = mspTools.ulGetMoveCustomizationFlagsFromFileData 
+
+      const customizationFlags = mspTools.ulGetMoveCustomizationFlagsFromFileData
         ? mspTools.ulGetMoveCustomizationFlagsFromFileData(classifierFileData)
         : 0;
 
@@ -390,16 +331,24 @@ export default class PlayerScoreManager {
         scoringAlgorithmType: classifier?.ml_ScoringAlgorithmType || 0,
       };
 
-      const rawScore = this._applyScoringModel(components, movementStats, classifier, customizationFlags);
-      const judgment = getJudgmentFromScore(rawScore, goldMove);
-      
-      this.postPlayerFeedback(playerIndex, judgment, goldMove, rawScore, coachIdx);
-      
-      /* if u want to change the scoring system, uncomment this to debug
-      if (document.querySelector('.msp-debug')) {
+      const rawScore = this._applyScoringModel(components, movementStats, customizationFlags);
+
+      let finalJudgment = "bad";
+
+      if (goldMove) {
+        if (rawScore >= 80 && playerEnergyAmount > SCORING_CONFIG.ENERGY.NO_MOVE_PENALTY_THRESHOLD) {
+          finalJudgment = "yeah";
+        } else {
+          finalJudgment = "badgold";
+        }
+      } else {
+        finalJudgment = getJudgmentFromScore(rawScore, false);
+      }
+
+      if (document.querySelector('.msp-debug') && ) {
         this.updateMspDebug(
           rawScore, 
-          judgment, 
+          finalJudgment, 
           components,
           movementStats,
           mspTools, 
@@ -410,9 +359,11 @@ export default class PlayerScoreManager {
           classifier,
           customizationFlags
         );
-      } */
+      }
 
-      return { score: rawScore, judgment, adjustedScore: this.scores[playerIndex] };
+      this.postPlayerFeedback(playerIndex, finalJudgment, goldMove, rawScore, coachIdx);
+
+      return { score: rawScore, judgment: finalJudgment, adjustedScore: this.scores[playerIndex] };
 
     } catch (error) {
       console.error(`Error in scoreMove for "${modelFileName}":`, error);
@@ -420,7 +371,7 @@ export default class PlayerScoreManager {
       return fallbackReturn;
     }
   }
-  
+
   _updateStreaksAndGetMultiplier(playerIndex, judgment) {
     if (['perfect', 'yeah'].includes(judgment)) {
       this.perfectStreaks[playerIndex]++;
@@ -429,38 +380,36 @@ export default class PlayerScoreManager {
     }
 
     const streakCount = this.perfectStreaks[playerIndex];
-    if (streakCount >= PERFECT_STREAK_THRESHOLDS.ON_FIRE) {
-      return PERFECT_STREAK_MULTIPLIERS.ON_FIRE;
+    if (streakCount >= SCORING_CONFIG.STREAKS.THRESHOLDS.ON_FIRE) {
+      return SCORING_CONFIG.STREAKS.MULTIPLIERS.ON_FIRE;
     }
-    if (streakCount >= PERFECT_STREAK_THRESHOLDS.HOT) {
-      return PERFECT_STREAK_MULTIPLIERS.HOT;
+    if (streakCount >= SCORING_CONFIG.STREAKS.THRESHOLDS.HOT) {
+      return SCORING_CONFIG.STREAKS.MULTIPLIERS.HOT;
     }
-    return PERFECT_STREAK_MULTIPLIERS.NONE;
+    return SCORING_CONFIG.STREAKS.MULTIPLIERS.NONE;
   }
-  
+
   _calculatePoints(judgment, rawScore, isGoldMove, coachIdx) {
     if (judgment === 'bad' || judgment === 'badgold') return 0;
-  
+
     const moveSetIdx = typeof coachIdx === 'number' ? coachIdx : 0;
     const movesArr = this.songVar[`Moves${moveSetIdx}`] || [];
-    const totalMoveValue = movesArr.reduce((count, move) => 
+    const totalMoveValue = movesArr.reduce((count, move) =>
       count + (move && move.goldMove ? 2 : 1), 0) || 1;
-    const basePoints = Math.floor(MAX_SCORE / totalMoveValue);
-  
+
+    const basePoints = Math.floor(SCORING_CONFIG.MAX_SCORE / totalMoveValue);
+
     let pts = Math.floor(basePoints * (rawScore / 100));
-  
+
     if (isGoldMove && judgment === 'yeah') {
-      pts *= 2;
+      pts = basePoints * 2;
     }
-  
+
     return pts;
   }
 
   postPlayerFeedback(playerIndex, judgment, isGoldMove, rawScore, coachIdx) {
-    if (playerIndex < 0 || playerIndex >= this.scores.length) {
-      console.warn(`Invalid player index: ${playerIndex}`);
-      return;
-    }
+    if (playerIndex < 0 || playerIndex >= this.scores.length) return;
 
     try {
       const points = this._calculatePoints(judgment, rawScore, isGoldMove, coachIdx);
@@ -468,7 +417,7 @@ export default class PlayerScoreManager {
       const finalPoints = Math.floor(points * streakMultiplier);
 
       this.scores[playerIndex] = Math.max(0, this.scores[playerIndex] + finalPoints);
-      
+
       this._updateUi(playerIndex);
       this._triggerParticleEffects(playerIndex, judgment);
       this._triggerFeedbackAnimation(playerIndex, judgment);
@@ -482,7 +431,7 @@ export default class PlayerScoreManager {
     const key = `player${playerIndex + 1}`;
     this.songVar.playerScore[key] = this.scores[playerIndex];
 
-    const percentage = Math.min(100, (this.scores[playerIndex] / MAX_SCORE) * 100).toFixed(2) + '%';
+    const percentage = Math.min(100, (this.scores[playerIndex] / SCORING_CONFIG.MAX_SCORE) * 100).toFixed(2) + '%';
     const scoreBar = document.querySelector(`.raceline-bar.${key}`);
     if (scoreBar) scoreBar.style.setProperty('--progress', percentage);
 
@@ -520,7 +469,7 @@ export default class PlayerScoreManager {
       console.warn(`Error triggering particle effects:`, e);
     }
   }
-  
+
   _triggerFeedbackAnimation(playerIndex, judgment) {
     try {
       const playerEl = document.querySelector(`#players .player${playerIndex + 1}`);
@@ -531,12 +480,12 @@ export default class PlayerScoreManager {
         feedbackEl.classList.add('animate');
       }
     } catch (e) {
-      console.warn(`Error updating UI feedback animation:`, e);
+      // safe ignore
     }
   }
 
-  updateMspDebug(finalScore, judgment, components, movementStats, mspTools, 
-                 classifierFileData, originalSampleCount, cleanedSampleCount, moveDurationMs, classifier, customizationFlags) {
+  updateMspDebug(finalScore, judgment, components, movementStats, mspTools,
+    classifierFileData, originalSampleCount, cleanedSampleCount, moveDurationMs, classifier, customizationFlags) {
     const debugElement = document.querySelector('.msp-debug');
     if (!debugElement) return;
 
@@ -550,22 +499,22 @@ export default class PlayerScoreManager {
     // Energy analysis
     const energyRatio = components.energyFactor > 0 ? components.energyFactor : 0;
     const energyStatus = energyRatio < 0.05 ? 'âœ— CRITICAL' :
-                        energyRatio > 20.0 ? 'âœ— IMPOSSIBLE' : 
-                        energyRatio >= 0.5 && energyRatio <= 1.5 ? 'âœ“ PERFECT' : 'âš  OFF';
+      energyRatio > 20.0 ? 'âœ— IMPOSSIBLE' :
+        energyRatio >= 0.5 && energyRatio <= 1.5 ? 'âœ“ PERFECT' : 'âš  OFF';
 
     // Classifier info
-    const scoringType = components.scoringAlgorithmType > 0 ? 'Naive Bayes' : 
-                       components.scoringAlgorithmType < 0 ? 'Mahalanobis' : 'NONE';
+    const scoringType = components.scoringAlgorithmType > 0 ? 'Naive Bayes' :
+      components.scoringAlgorithmType < 0 ? 'Mahalanobis' : 'NONE';
     const measuresCount = Math.abs(components.scoringAlgorithmType);
 
     // Direction info
     const directionStatus = ignoreDirection ? 'âŠ˜ IGNORED' :
-                           components.directionTendency > 0.3 ? 'âœ“ RIGHT' :
-                           components.directionTendency < -0.3 ? 'âœ— WRONG' : 'â†” MIXED';
+      components.directionTendency > 0.3 ? 'âœ“ RIGHT' :
+        components.directionTendency < -0.3 ? 'âœ— WRONG' : 'â†” MIXED';
 
     // Shake info
     const shakeStatus = ignoreShake ? 'âŠ˜ IGNORED' :
-                       components.shakeTime > 0 ? `âœ— YES (${fmt(components.shakeTime, 2)}s)` : 'âœ“ NO';
+      components.shakeTime > 0 ? `âœ— YES (${fmt(components.shakeTime, 2)}s)` : 'âœ“ NO';
 
     const scoreColumn = `
 === FINAL SCORE ===
@@ -623,10 +572,10 @@ Movement:
   <div>${classifierColumn}</div>
   <div>${dataColumn}</div>
 </div>`;
-    
+
     debugElement.innerHTML = debugHTML;
   }
-  
+
   destroy() {
     try {
       this.particleSystems.forEach(system => system?.destroy());
