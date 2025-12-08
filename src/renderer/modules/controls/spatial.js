@@ -600,44 +600,34 @@ export class SpatialNavigation {
 
         const dx = toCenter.x - fromCenter.x;
         const dy = toCenter.y - fromCenter.y;
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
         
-        const quadrants = {
-            right: [-45, 45],
-            down: [45, 135],
-            left: [135, -135],
-            up: [-135, -45]
-        };
-        
-        let inQuadrant = false;
-        if (direction in quadrants) {
-            const [min, max] = quadrants[direction];
-            if (min <= max) {
-                inQuadrant = angle >= min && angle <= max;
-            } else {
-                inQuadrant = angle >= min || angle <= max;
-            }
-        }
-        
-        const margin = this.config.focusMargin;
-        let passesMargin = false;
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        if (angle < 0) angle += 360;
+
+        const cone = 60; 
+
+        let inSector = false;
         
         switch (direction) {
-            case 'up':
-                passesMargin = toCenter.y < fromCenter.y - margin;
+            case 'right':
+                if (toCenter.x <= fromCenter.x) return false;
+                inSector = (angle >= 360 - cone || angle <= cone);
                 break;
             case 'down':
-                passesMargin = toCenter.y > fromCenter.y + margin;
+                if (toCenter.y <= fromCenter.y) return false;
+                inSector = (angle >= 90 - cone && angle <= 90 + cone);
                 break;
             case 'left':
-                passesMargin = toCenter.x < fromCenter.x - margin;
+                if (toCenter.x >= fromCenter.x) return false;
+                inSector = (angle >= 180 - cone && angle <= 180 + cone);
                 break;
-            case 'right':
-                passesMargin = toCenter.x > fromCenter.x + margin;
+            case 'up':
+                if (toCenter.y >= fromCenter.y) return false;
+                inSector = (angle >= 270 - cone && angle <= 270 + cone);
                 break;
         }
-        
-        return inQuadrant && passesMargin;
+
+        return inSector;
     }
 
     findBestCandidate(candidates, fromRect, direction) {
@@ -666,32 +656,27 @@ export class SpatialNavigation {
     }
 
     calculateCandidateScore(candidate, fromCenter, direction) {
+        const candidateRect = candidate.rect;
         const candidateCenter = {
-            x: candidate.rect.left + candidate.rect.width / 2,
-            y: candidate.rect.top + candidate.rect.height / 2
+            x: candidateRect.left + candidateRect.width / 2,
+            y: candidateRect.top + candidateRect.height / 2
         };
 
-        const dx = candidateCenter.x - fromCenter.x;
-        const dy = candidateCenter.y - fromCenter.y;
-        const distance = Math.hypot(dx, dy);
-        
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        let idealAngle = 0;
-        switch (direction) {
-            case 'up': idealAngle = -90; break;
-            case 'right': idealAngle = 0; break;
-            case 'down': idealAngle = 90; break;
-            case 'left': idealAngle = 180; break;
+        const distX = Math.abs(candidateCenter.x - fromCenter.x);
+        const distY = Math.abs(candidateCenter.y - fromCenter.y);
+
+        let primaryDist, secondaryDist;
+
+        if (direction === 'left' || direction === 'right') {
+            primaryDist = distX;
+            secondaryDist = distY;
+        } else {
+            primaryDist = distY;
+            secondaryDist = distX;
         }
-        
-        let angleDiff = Math.abs(angle - idealAngle);
-        if (angleDiff > 180) angleDiff = 360 - angleDiff;
-        
-        const alignmentScore = angleDiff / 180;
-        
-        let baseScore = distance * (1 + alignmentScore);
-        
+
+        let baseScore = primaryDist + (secondaryDist * 2.5);
+
         if (!this.isElementInViewport(candidate.element)) {
             if (this.config.considerOutOfViewport) {
                 const visibilityPenalty = this.calculateVisibilityPenalty(candidate.rect);
@@ -722,24 +707,34 @@ export class SpatialNavigation {
         let navigableElements = this.elements.filter(el => this.isElementNavigable(el));
         if (navigableElements.length === 0) return -1;
         
+        const getCenter = (rect) => ({
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        });
+
         let sortedElements = [...navigableElements];
         
-        switch (direction) {
-            case 'up':
-                sortedElements.sort((a, b) => b.getBoundingClientRect().bottom - a.getBoundingClientRect().bottom);
-                return this.elements.indexOf(sortedElements[0]);
-            case 'down':
-                sortedElements.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-                return this.elements.indexOf(sortedElements[0]);
-            case 'left':
-                sortedElements.sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right);
-                return this.elements.indexOf(sortedElements[0]);
-            case 'right':
-                sortedElements.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-                return this.elements.indexOf(sortedElements[0]);
-            default:
-                return -1;
-        }
+        sortedElements.sort((a, b) => {
+            const rectA = a.getBoundingClientRect();
+            const rectB = b.getBoundingClientRect();
+            const centerA = getCenter(rectA);
+            const centerB = getCenter(rectB);
+
+            switch (direction) {
+                case 'up':
+                    return centerB.y - centerA.y; 
+                case 'down':
+                    return centerA.y - centerB.y;
+                case 'left':
+                    return centerB.x - centerA.x;
+                case 'right':
+                    return centerA.x - centerB.x;
+                default:
+                    return 0;
+            }
+        });
+
+        return this.elements.indexOf(sortedElements[0]);
     }
 
     focusElement(index) {
