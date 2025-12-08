@@ -64,6 +64,7 @@ export default class HudController {
         if (!this._isUserPaused) return;
         this._isUserPaused = false;
         this.videoManager.playMedia();
+        this.alignPlayersToCoaches();
     }
 
     pause() {
@@ -168,7 +169,80 @@ export default class HudController {
         }
         this.hud.classList.add("show");
         this.hud.style.setProperty("--menu-color", this.songData.lyricsColor);
+
+        this.alignPlayersToCoaches();
     }
+
+    alignPlayersToCoaches() {
+        const numCoach = this.songData.NumCoach || 4;
+        const coachWidth = 100 / numCoach; 
+        
+        const hudPlayerContainers = Array.from(this.hud.querySelectorAll('#players .player-container'));
+        const racetrackBars = Array.from(this.hud.querySelectorAll('#racetrack .raceline-bar'));
+
+        const coachGroups = {};
+        for (let i = 0; i < numCoach; i++) coachGroups[i] = [];
+
+        hudPlayerContainers.forEach(container => {
+            if (container.classList.contains('hidden')) return;
+
+            const playerIndex = parseInt(container.getAttribute('data-player-index'));
+            const playerId = `player${playerIndex + 1}`;
+            const playerData = window.players ? window.players[playerId] : null;
+
+            let selectedCoach = 0;
+            if (playerData && playerData.currentSelectedCoach !== undefined) {
+                selectedCoach = playerData.currentSelectedCoach;
+            } else {
+                selectedCoach = playerIndex % numCoach;
+            }
+
+            if (selectedCoach >= numCoach) selectedCoach = numCoach - 1;
+
+            coachGroups[selectedCoach].push(container);
+        });
+
+        let maxCluster = 0;
+        for(let i=0; i<numCoach; i++) maxCluster = Math.max(maxCluster, coachGroups[i].length);
+        
+        const playersDiv = this.hud.querySelector('#players');
+        const isCrowded = (numCoach >= 4 && maxCluster >= 2) || maxCluster >= 3;
+        
+        if (isCrowded) {
+            playersDiv.classList.add('narrow');
+        } else {
+            playersDiv.classList.remove('narrow');
+        }
+
+        let visualSortIndex = 0;
+
+        for (let coachIdx = 0; coachIdx < numCoach; coachIdx++) {
+            const group = coachGroups[coachIdx];
+            if (group.length === 0) continue;
+
+            const segmentSize = coachWidth / (group.length + 1);
+            const coachStartPos = coachIdx * coachWidth;
+
+            group.forEach((container, i) => {
+                const offset = segmentSize * (i + 1); 
+                const finalLeft = coachStartPos + offset;
+                
+                container.style.left = `${finalLeft}%`;
+                container.style.zIndex = 10 + i;
+
+                const pIdx = container.getAttribute('data-player-index');
+                
+                const bar = racetrackBars.find(b => b.getAttribute('data-player-index') === pIdx);
+                
+                if (bar) {
+                    bar.style.left = `calc(var(--gap) * ${visualSortIndex})`;
+                }
+
+                visualSortIndex++;
+            });
+        }
+    }
+
 
     initializeHudLoop() {
         if (this.loopUI) return this.loopUI;
@@ -342,10 +416,10 @@ export default class HudController {
         console.log("Initializing phone motion tracking");
 
         if (!window.players) window.players = {};
-        
+
         // Initialize history buffer
-        Object.values(window.players).forEach(p => { 
-            if (!p.motionHistory) p.motionHistory = []; 
+        Object.values(window.players).forEach(p => {
+            if (!p.motionHistory) p.motionHistory = [];
         });
 
         window.phoneController.on('motion', ({ phoneId, data, timestamp }) => {
@@ -361,7 +435,7 @@ export default class HudController {
 
                 // 3. Store in history buffer
                 if (!player.motionHistory) player.motionHistory = [];
-                
+
                 player.motionHistory.push({
                     timestamp: correctedTime,
                     accel: [data.x, data.y, data.z]
@@ -394,7 +468,7 @@ export default class HudController {
 
             while (idx < movesArr.length) {
                 const move = movesArr[idx];
-                
+
                 // Wait until the move is completely finished + 200ms buffer for network lag
                 if ((move.time + nohud + move.duration + 200) > now) break;
 
@@ -404,10 +478,10 @@ export default class HudController {
                 for (const player of Object.values(window.players)) {
                     if (player.isActive && player.currentSelectedCoach === coachIdx) {
                         const playerIndex = player.id - 1;
-                        
+
                         // Extract data from history using corrected timestamps
-                        const moveMotionData = (player.motionHistory || []).filter(sample => 
-                            sample.timestamp >= moveStartTime && 
+                        const moveMotionData = (player.motionHistory || []).filter(sample =>
+                            sample.timestamp >= moveStartTime &&
                             sample.timestamp <= moveEndTime
                         );
 
@@ -430,9 +504,9 @@ export default class HudController {
         console.log("Initializing phone motion tracking");
 
         if (!window.players) window.players = {};
-        
-        Object.values(window.players).forEach(p => { 
-            if (!p.motionHistory) p.motionHistory = []; 
+
+        Object.values(window.players).forEach(p => {
+            if (!p.motionHistory) p.motionHistory = [];
         });
 
         window.phoneController.on('motion', ({ phoneId, data, timestamp }) => {
@@ -444,7 +518,7 @@ export default class HudController {
                 const gameSystemTime = timestamp + offset;
 
                 let motionSongTime;
-                
+
                 if (this._lastSyncTime > 0) {
                     motionSongTime = gameSystemTime - (this._lastSyncTime - this._lastVideoTime);
                 } else {
@@ -454,9 +528,9 @@ export default class HudController {
                 }
 
                 if (!player.motionHistory) player.motionHistory = [];
-                
+
                 player.motionHistory.push({
-                    timestamp: motionSongTime, 
+                    timestamp: motionSongTime,
                     accel: [data.x, data.y, data.z]
                 });
 
