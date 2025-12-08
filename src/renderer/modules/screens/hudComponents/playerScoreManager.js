@@ -5,7 +5,7 @@ import WebGLFeedBackParticleSystem from './particles/feedback.js';
 import StarManager from './starManager.js';
 
 const SCORING_CONFIG = {
-  ENABLE_DEBUG: true,
+  ENABLE_DEBUG: false,
   G_FORCE: 9.81,
   MAX_SCORE: 13333,
   SENSOR_SMOOTHING_FREQUENCY: 60.0, 
