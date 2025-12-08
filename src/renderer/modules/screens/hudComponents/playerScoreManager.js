@@ -5,28 +5,36 @@ import WebGLFeedBackParticleSystem from './particles/feedback.js';
 import StarManager from './starManager.js';
 
 const SCORING_CONFIG = {
-  ENABLE_DEBUG: false,
+  ENABLE_DEBUG: true,
   G_FORCE: 9.81,
   MAX_SCORE: 13333,
-  SENSOR_SMOOTHING_FREQUENCY: 60.0,
+  SENSOR_SMOOTHING_FREQUENCY: 60.0, 
 
   MOVEMENT: {
-    STATIONARY_VARIANCE: 0.003,
-    MIN_TOTAL_ACCEL_CHANGE: 0.5,
     MIN_VALID_SAMPLES: 8,
   },
 
-  THRESHOLDS: {
-    STAT_DIST_LOW: 1.0,
-    STAT_DIST_HIGH: 3.5,
-    AUTO_CORRELATION: 0.70,
-    DIRECTION_IMPACT: 1.0,
+  MOVESPACE_PARAMS: {
+    default_distance_low_threshold: 1.0,
+    default_distance_high_threshold: 3.5,
+    default_auto_correlation_theshold: 0.70,
+    default_direction_impact_factor: 1.0,
+    
+    // Thresholds
+    no_move_penalty_if_energy_amount_under: 0.16,
+    charity_bonus_if_energy_factor_above: 0.50,
+    perfect_malus_if_energy_factor_under: 0.30,
+    
+    // Phone Specifics
+    phone_no_move_penalty_if_energy_amount_under: 0.25,
+    phone_shake_detected_max_score_ratio: 0.40,
+    phone_direction_malus_multiplier: 0.50,
   },
 
-  ENERGY: {
-    NO_MOVE_PENALTY_THRESHOLD: 0.16,
-    NO_MOVE_PENALTY_MULTIPLIER: 0.25,
-    SHAKE_DETECTED_MAX_SCORE: 0.40,
+  CONSTANTS: {
+    NO_MOVE_PENALTY_MULTIPLIER: 0.1,
+    CHARITY_BONUS_ADD: 0.15,
+    PERFECT_MALUS_CAP: 0.80,
   },
 
   JUDGMENTS: {
@@ -62,7 +70,7 @@ function calculateEnergyFactor(energyMeansResults, classifierEnergyMeans, dampin
 }
 
 const getJudgmentFromScore = (score, isGold) => {
-  if (isGold) return score >= 70 ? "yeah" : "badgold";
+  if (isGold) return score >= 80 ? "yeah" : "badgold";
   if (score >= SCORING_CONFIG.JUDGMENTS.PERFECT) return "perfect";
   if (score >= SCORING_CONFIG.JUDGMENTS.SUPER) return "super";
   if (score >= SCORING_CONFIG.JUDGMENTS.GOOD) return "good";
@@ -87,10 +95,10 @@ export default class PlayerScoreManager {
     this.scoreManagerInstance = new MSP_LIB.ScoreManager();
 
     this.scoreManagerInstance.Game().Init(
-      SCORING_CONFIG.THRESHOLDS.STAT_DIST_LOW,
-      SCORING_CONFIG.THRESHOLDS.STAT_DIST_HIGH,
-      SCORING_CONFIG.THRESHOLDS.AUTO_CORRELATION,
-      SCORING_CONFIG.THRESHOLDS.DIRECTION_IMPACT,
+      SCORING_CONFIG.MOVESPACE_PARAMS.default_distance_low_threshold,
+      SCORING_CONFIG.MOVESPACE_PARAMS.default_distance_high_threshold,
+      SCORING_CONFIG.MOVESPACE_PARAMS.default_auto_correlation_theshold,
+      SCORING_CONFIG.MOVESPACE_PARAMS.default_direction_impact_factor,
       SCORING_CONFIG.SENSOR_SMOOTHING_FREQUENCY
     );
 
@@ -132,52 +140,56 @@ export default class PlayerScoreManager {
     return systems;
   }
 
-  _calculateMovementStats(samples) {
-    if (samples.length < 3) {
-      return { variance: [0, 0, 0], totalChange: 0, isStationary: true };
+  // --- CORE FIX: RESAMPLING ---
+  // Transforms erratic network packets into a smooth 60Hz signal.
+  // This eliminates artificial high energy caused by packet bursts/jitter.
+  _resampleSeries(samples, targetFreq = SCORING_CONFIG.SENSOR_SMOOTHING_FREQUENCY) {
+    if (samples.length < 2) return [];
+
+    // 1. Sort by time (Network packets can arrive out of order)
+    samples.sort((a, b) => a.timestamp - b.timestamp);
+
+    const result = [];
+    const step = 1000.0 / targetFreq; // ms per frame (e.g., 16.66ms)
+    
+    const startTime = samples[0].timestamp;
+    const endTime = samples[samples.length - 1].timestamp;
+
+    let currentSampleIdx = 0;
+
+    // 2. Generate perfect timestamps
+    for (let t = startTime; t <= endTime; t += step) {
+        
+        // Find the two raw samples surrounding our target time 't'
+        while (currentSampleIdx < samples.length - 1 && samples[currentSampleIdx + 1].timestamp < t) {
+            currentSampleIdx++;
+        }
+
+        const p0 = samples[currentSampleIdx];
+        const p1 = samples[currentSampleIdx + 1];
+
+        // End of data
+        if (!p1) break;
+
+        // 3. Linear Interpolation
+        // If data is missing for 50ms, this draws a straight line instead of a jump
+        const range = p1.timestamp - p0.timestamp;
+        const factor = range === 0 ? 0 : (t - p0.timestamp) / range;
+
+        const x = p0.accel[0] + (p1.accel[0] - p0.accel[0]) * factor;
+        const y = p0.accel[1] + (p1.accel[1] - p0.accel[1]) * factor;
+        const z = p0.accel[2] + (p1.accel[2] - p0.accel[2]) * factor;
+
+        result.push({ timestamp: t, accel: [x, y, z] });
     }
 
-    const mean = [0, 0, 0];
-    for (const s of samples) {
-      for (let i = 0; i < 3; i++) {
-        mean[i] += s.accel[i];
-      }
-    }
-    for (let i = 0; i < 3; i++) {
-      mean[i] /= samples.length;
-    }
-
-    const variance = [0, 0, 0];
-    for (const s of samples) {
-      for (let i = 0; i < 3; i++) {
-        const diff = s.accel[i] - mean[i];
-        variance[i] += diff * diff;
-      }
-    }
-    for (let i = 0; i < 3; i++) {
-      variance[i] /= samples.length;
-    }
-
-    let totalChange = 0;
-    for (let i = 1; i < samples.length; i++) {
-      for (let j = 0; j < 3; j++) {
-        totalChange += Math.abs(samples[i].accel[j] - samples[i - 1].accel[j]);
-      }
-    }
-    totalChange /= SCORING_CONFIG.G_FORCE;
-
-    const maxVariance = Math.max(...variance);
-    const isStationary = (
-      maxVariance < SCORING_CONFIG.MOVEMENT.STATIONARY_VARIANCE &&
-      totalChange < SCORING_CONFIG.MOVEMENT.MIN_TOTAL_ACCEL_CHANGE
-    );
-
-    return { variance, totalChange, isStationary, maxVariance };
+    return result;
   }
 
   _preprocessSamples(samples) {
     if (!Array.isArray(samples) || samples.length === 0) return [];
 
+    // Filter valid data first
     const valid = samples.filter(s =>
       s &&
       typeof s.timestamp === 'number' && isFinite(s.timestamp) &&
@@ -186,49 +198,51 @@ export default class PlayerScoreManager {
 
     if (valid.length < SCORING_CONFIG.MOVEMENT.MIN_VALID_SAMPLES) return [];
 
-    valid.sort((a, b) => a.timestamp - b.timestamp);
+    // Apply the Resampler
+    const resampled = this._resampleSeries(valid);
 
-    const unique = [valid[0]];
-    for (let i = 1; i < valid.length; i++) {
-      const curr = valid[i];
-      const prev = unique[unique.length - 1];
-
-      const timeDiff = Math.abs(curr.timestamp - prev.timestamp);
-      if (timeDiff < 5) continue;
-
-      unique.push(curr);
-    }
-
-    return unique;
+    return resampled;
   }
 
-  _applyScoringModel(components, movementStats, customizationFlags) {
-    if (movementStats.isStationary) return 0;
-
+  _applyScoringModel(components, customizationFlags) {
     let finalRatio = components.ratioScore;
+    const params = SCORING_CONFIG.MOVESPACE_PARAMS;
+    const consts = SCORING_CONFIG.CONSTANTS;
 
-    // Energy Floor: Penalty for small movements
-    if (components.playerEnergyAmount < SCORING_CONFIG.ENERGY.NO_MOVE_PENALTY_THRESHOLD) {
-      finalRatio *= SCORING_CONFIG.ENERGY.NO_MOVE_PENALTY_MULTIPLIER;
+    // 1. Energy Floor
+    // Fixes "Perfect" on stationary phones. If Energy < 0.25 (Phone param), score is nuked.
+    if (components.playerEnergyAmount < params.phone_no_move_penalty_if_energy_amount_under) {
+      finalRatio *= consts.NO_MOVE_PENALTY_MULTIPLIER;
     }
 
-    // Shake Penalty
+    // 2. Shake Penalty
     const ignoreShake = (customizationFlags & 0x02) !== 0;
     if (!ignoreShake && components.shakeTime > 0) {
-      finalRatio = Math.min(finalRatio, SCORING_CONFIG.ENERGY.SHAKE_DETECTED_MAX_SCORE);
+      finalRatio = Math.min(finalRatio, params.phone_shake_detected_max_score_ratio);
     }
 
-    // Direction Penalty
+    // 3. Direction Malus
     const ignoreDirection = (customizationFlags & 0x01) !== 0;
     if (!ignoreDirection && components.directionTendency !== undefined) {
       if (components.directionTendency < 0) {
-        const directionMultiplier = 1.0 + (components.directionTendency * 0.5);
-        finalRatio *= Math.max(0.1, directionMultiplier);
+        const directionFactor = 1.0 + ((components.directionTendency * params.phone_direction_malus_multiplier) * 10);
+        finalRatio *= Math.max(0.1, directionFactor);
       }
     }
 
-    // Sticky Perfect
-    if (finalRatio > 0.96) finalRatio = 1.0;
+    // 4. Charity Bonus
+    if (components.energyFactor > params.charity_bonus_if_energy_factor_above) {
+        if(finalRatio > 0.2 && finalRatio < 0.9) { 
+            finalRatio += consts.CHARITY_BONUS_ADD;
+        }
+    }
+
+    // 5. Perfect Malus (Lazy Move Prevention)
+    if (finalRatio > consts.PERFECT_MALUS_CAP && components.energyFactor < params.perfect_malus_if_energy_factor_under) {
+        finalRatio = consts.PERFECT_MALUS_CAP; 
+    }
+
+    if (finalRatio > 0.97) finalRatio = 1.0;
 
     return Math.max(0, Math.min(1, finalRatio)) * 100;
   }
@@ -242,21 +256,11 @@ export default class PlayerScoreManager {
     };
 
     const originalSampleCount = Array.isArray(samples) ? samples.length : 0;
-
-    if (originalSampleCount < SCORING_CONFIG.MOVEMENT.MIN_VALID_SAMPLES) {
-      this.postPlayerFeedback(playerIndex, fallbackJudgment, goldMove, 0, coachIdx);
-      return fallbackReturn;
-    }
-
-    const movementStats = this._calculateMovementStats(samples);
-
-    if (movementStats.isStationary) {
-      this.postPlayerFeedback(playerIndex, fallbackJudgment, goldMove, 0, coachIdx);
-      return fallbackReturn;
-    }
-
+    
+    // Process: Validate -> Resample (Fix Jitter) -> Clean
     const cleanedSamples = this._preprocessSamples(samples);
 
+    // Ensure we have enough data AFTER resampling (approx 130ms at 60Hz)
     if (cleanedSamples.length < SCORING_CONFIG.MOVEMENT.MIN_VALID_SAMPLES) {
       this.postPlayerFeedback(playerIndex, fallbackJudgment, goldMove, 0, coachIdx);
       return fallbackReturn;
@@ -283,6 +287,7 @@ export default class PlayerScoreManager {
       const moveDurationMs = tN - t0;
 
       if (moveDurationMs < 100) {
+        gameInterface.StopMoveAnalysis();
         return fallbackReturn;
       }
 
@@ -332,12 +337,13 @@ export default class PlayerScoreManager {
         scoringAlgorithmType: classifier?.ml_ScoringAlgorithmType || 0,
       };
 
-      const rawScore = this._applyScoringModel(components, movementStats, customizationFlags);
+      const rawScore = this._applyScoringModel(components, customizationFlags);
 
       let finalJudgment = "bad";
 
       if (goldMove) {
-        if (rawScore >= 80 && playerEnergyAmount > SCORING_CONFIG.ENERGY.NO_MOVE_PENALTY_THRESHOLD) {
+        // Gold Moves: Require accuracy AND minimum energy
+        if (rawScore >= 70 && playerEnergyAmount > SCORING_CONFIG.MOVESPACE_PARAMS.phone_no_move_penalty_if_energy_amount_under) {
           finalJudgment = "yeah";
         } else {
           finalJudgment = "badgold";
@@ -348,13 +354,12 @@ export default class PlayerScoreManager {
 
       if (SCORING_CONFIG.ENABLE_DEBUG && document.querySelector('.msp-debug')) {
         this.updateMspDebug(
-          rawScore, 
-          finalJudgment, 
+          rawScore,
+          finalJudgment,
           components,
-          movementStats,
-          mspTools, 
-          classifierFileData, 
-          originalSampleCount, 
+          mspTools,
+          classifierFileData,
+          originalSampleCount,
           cleanedSamples.length,
           moveDurationMs,
           classifier,
@@ -485,93 +490,117 @@ export default class PlayerScoreManager {
     }
   }
 
-  updateMspDebug(finalScore, judgment, components, movementStats, mspTools,
+  updateMspDebug(finalScore, judgment, components, mspTools,
     classifierFileData, originalSampleCount, cleanedSampleCount, moveDurationMs, classifier, customizationFlags) {
     const debugElement = document.querySelector('.msp-debug');
     if (!debugElement) return;
 
     const fmt = (num, p = 3) => (typeof num === 'number' ? num.toFixed(p) : 'N/A');
     const staticTools = MSP_LIB.ScoreManager.ToolsInterface;
+    const params = SCORING_CONFIG.MOVESPACE_PARAMS;
+    const consts = SCORING_CONFIG.CONSTANTS;
 
-    // Parse customization flags
     const ignoreDirection = (customizationFlags & 0x01) !== 0;
     const ignoreShake = (customizationFlags & 0x02) !== 0;
 
-    // Energy analysis
-    const energyRatio = components.energyFactor > 0 ? components.energyFactor : 0;
-    const energyStatus = energyRatio < 0.05 ? 'âœ— CRITICAL' :
-      energyRatio > 20.0 ? 'âœ— IMPOSSIBLE' :
-        energyRatio >= 0.5 && energyRatio <= 1.5 ? 'âœ“ PERFECT' : 'âš  OFF';
+    // --- RECONSTRUCT CALCULATION STEPS ---
+    let calcLog = `Base: ${fmt(components.ratioScore, 4)}\n`;
+    let tempScore = components.ratioScore;
 
-    // Classifier info
-    const scoringType = components.scoringAlgorithmType > 0 ? 'Naive Bayes' :
-      components.scoringAlgorithmType < 0 ? 'Mahalanobis' : 'NONE';
-    const measuresCount = Math.abs(components.scoringAlgorithmType);
+    // 1. Energy Floor
+    if (components.playerEnergyAmount < params.phone_no_move_penalty_if_energy_amount_under) {
+        calcLog += `[!] Low Energy: * ${consts.NO_MOVE_PENALTY_MULTIPLIER}\n`;
+        tempScore *= consts.NO_MOVE_PENALTY_MULTIPLIER;
+    } else {
+        calcLog += `[OK] Energy Floor Passed\n`;
+    }
 
-    // Direction info
-    const directionStatus = ignoreDirection ? 'âŠ˜ IGNORED' :
-      components.directionTendency > 0.3 ? 'âœ“ RIGHT' :
-        components.directionTendency < -0.3 ? 'âœ— WRONG' : 'â†” MIXED';
+    // 2. Shake
+    if (!ignoreShake && components.shakeTime > 0) {
+        calcLog += `[!] Shake (${fmt(components.shakeTime, 2)}s): Cap ${params.phone_shake_detected_max_score_ratio}\n`;
+        tempScore = Math.min(tempScore, params.phone_shake_detected_max_score_ratio);
+    }
 
-    // Shake info
-    const shakeStatus = ignoreShake ? 'âŠ˜ IGNORED' :
-      components.shakeTime > 0 ? `âœ— YES (${fmt(components.shakeTime, 2)}s)` : 'âœ“ NO';
+    // 3. Direction
+    if (!ignoreDirection && components.directionTendency !== undefined) {
+        if (components.directionTendency < 0) {
+            const factor = 1.0 + ((components.directionTendency * params.phone_direction_malus_multiplier) * 10);
+            calcLog += `[!] Wrong Dir (${fmt(components.directionTendency, 2)}): * ${fmt(factor, 2)}\n`;
+            tempScore *= Math.max(0.1, factor);
+        } else {
+            calcLog += `[OK] Direction (${fmt(components.directionTendency, 2)})\n`;
+        }
+    } else {
+        calcLog += `[--] Direction Ignored\n`;
+    }
+
+    // 4. Charity
+    if (components.energyFactor > params.charity_bonus_if_energy_factor_above) {
+        if(tempScore > 0.2 && tempScore < 0.9) {
+            calcLog += `[+] Charity Bonus: + ${consts.CHARITY_BONUS_ADD}\n`;
+            tempScore += consts.CHARITY_BONUS_ADD;
+        } else {
+            calcLog += `[--] Charity: Score out of range\n`;
+        }
+    } else {
+        calcLog += `[--] Charity: Low Factor (${fmt(components.energyFactor, 2)})\n`;
+    }
+
+    // 5. Perfect Malus
+    if (tempScore > consts.PERFECT_MALUS_CAP && components.energyFactor < params.perfect_malus_if_energy_factor_under) {
+        calcLog += `[!] Perf Malus: Cap ${consts.PERFECT_MALUS_CAP}\n`;
+        tempScore = consts.PERFECT_MALUS_CAP;
+    }
+
+    calcLog += `Final: ${fmt(tempScore, 4)}`;
 
     const scoreColumn = `
-=== FINAL SCORE ===
+=== RESULT ===
 Score: ${fmt(finalScore, 1)}% (${judgment.toUpperCase()})
-Ratio: ${fmt(components.ratioScore, 3)} (0-1)
+Raw Ratio: ${fmt(components.ratioScore, 4)}
 Stat Dist: ${fmt(components.statisticalDistance, 3)}
+`;
 
-=== ADJUSTMENTS ===
-Direction: ${directionStatus}
-  Impact: ${fmt(components.directionTendency, 2)}
-Shake: ${shakeStatus}
+    const calcColumn = `
+=== CALCULATION ===
+${calcLog}
 `;
 
     const energyColumn = `
 === ENERGY ===
-Factor: ${fmt(energyRatio, 2)}x ${energyStatus}
 Amount: ${fmt(components.playerEnergyAmount, 3)}
-  AccelNormAvg: ${fmt(components.energyMeansResults[0], 3)}
-  AccelDevNormAvg: ${fmt(components.energyMeansResults[1], 3)}
-Expected:
-  AccelNormAvg: ${fmt(components.classifierEnergyMeans[0], 3)}
-  AccelDevNormAvg: ${fmt(components.classifierEnergyMeans[1], 3)}
+  (Min: ${params.phone_no_move_penalty_if_energy_amount_under})
+
+Factor: ${fmt(components.energyFactor, 3)}x
+  (Charity > ${params.charity_bonus_if_energy_factor_above})
+  (Malus < ${params.perfect_malus_if_energy_factor_under})
+
+Means (User / Model):
+  Norm: ${fmt(components.energyMeansResults[0], 2)} / ${fmt(components.classifierEnergyMeans[0], 2)}
+  Dev:  ${fmt(components.energyMeansResults[1], 2)} / ${fmt(components.classifierEnergyMeans[1], 2)}
 `;
 
     const classifierColumn = `
-=== CLASSIFIER DATA ===
-Algorithm: ${scoringType}
-Measures: ${measuresCount}
-Means: ${classifier?.maf_Means?.length || 0}
-Covariances: ${classifier?.maf_InvertedCovariances?.length || 0}
-Energy Means: ${classifier?.maf_EnergyMeans?.length || 0}
+=== CLASSIFIER / DATA ===
+Move: ${staticTools.GetMoveNameFromFileData(classifierFileData)}
+Type: ${components.scoringAlgorithmType > 0 ? 'Naive Bayes' : 'Mahalanobis'}
+Dims: ${Math.abs(components.scoringAlgorithmType)}
+
+Samples: ${cleanedSampleCount}/${originalSampleCount}
+Rate: ${fmt(cleanedSampleCount / (moveDurationMs / 1000), 1)} Hz
+Time: ${fmt(moveDurationMs / 1000, 2)}s
 
 Flags:
-  IgnoreDirection: ${ignoreDirection ? 'YES' : 'NO'}
-  IgnoreShake: ${ignoreShake ? 'YES' : 'NO'}
-`;
-
-    const dataColumn = `
-=== RAW DATA ===
-Samples: ${cleanedSampleCount}/${originalSampleCount}
-Duration: ${fmt(moveDurationMs / 1000, 2)}s
-Rate: ${fmt(cleanedSampleCount / (moveDurationMs / 1000), 1)} Hz
-Move: ${staticTools.GetMoveNameFromFileData(classifierFileData)}
-
-Movement:
-  Status: ${movementStats.isStationary ? 'âœ— STATIC' : 'âœ“ MOVING'}
-  Variance: ${fmt(movementStats.maxVariance, 4)}
-  Change: ${fmt(movementStats.totalChange, 2)}G
+  Dir: ${ignoreDirection ? 'IGNORED' : 'ACTIVE'}
+  Shake: ${ignoreShake ? 'IGNORED' : 'ACTIVE'}
 `;
 
     const debugHTML = `
 <div style="display:flex; flex-direction:row; font-family:monospace; font-size:11px; white-space:pre; color: #fff; background: rgba(0, 0, 0, 0.29); padding: 10px; border-radius: 4px; gap: 20px; line-height: 1.4;">
   <div>${scoreColumn}</div>
+  <div>${calcColumn}</div>
   <div>${energyColumn}</div>
   <div>${classifierColumn}</div>
-  <div>${dataColumn}</div>
 </div>`;
 
     debugElement.innerHTML = debugHTML;
