@@ -405,6 +405,6 @@ export const initHud = () => {
           window.hudController.alignPlayersToCoaches()
         }, 500);
       })
-    }, 1500);
+    }, 2500);
   };
 };
