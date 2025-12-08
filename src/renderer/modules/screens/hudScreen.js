@@ -144,7 +144,7 @@ export const initHud = () => {
               { tag: "span", attrs: { class: "currentMoves" }, children: ["Current Moves1: ", { tag: "span", attrs: { class: "currentMoves1" } }, ".msm"] }
             ]
           },
-          { tag: "span", attrs: { class: "msp-debug"}, children: [] },
+          { tag: "span", attrs: { class: "msp-debug" }, children: [] },
           {
             tag: "div",
             attrs: { id: "players", class: `${gamevar.isCamera ? 'camera' : ''}` },
@@ -371,7 +371,7 @@ export const initHud = () => {
     document.querySelector('#coachselection .button--continue').style.display = 'flex';
   };
 
-  window.startSong = (force=false) => {
+  window.startSong = (force = false) => {
     if (!gamevar.mapsReady && !force) {
       console.warn("Attempted to start song before maps were ready. Ignoring.");
       return;
@@ -396,12 +396,13 @@ export const initHud = () => {
       TransitionManager.startTransition(1, () => {
         document.querySelector("#coachselection").style.display = "none";
         setTimeout(() => {
-          if(window.phoneController)window.phoneController.broadcast({
+          if (window.phoneController) window.phoneController.broadcast({
             type: 'enableMotion',
             enabled: true
           });
 
           window.hudController.playMedia();
+          window.hudController.alignPlayersToCoaches()
         }, 500);
       })
     }, 1500);
