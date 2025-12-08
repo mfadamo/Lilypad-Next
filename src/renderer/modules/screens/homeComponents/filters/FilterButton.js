@@ -1,5 +1,4 @@
-
-// src/renderer/modules/screens/homeComponents/filters/FilterButton.js - Filter button
+// src/renderer/modules/screens/homeComponents/filters/FilterButton.js
 import { store, actions } from '../state.js';
 import { renderSongGrid } from '../songDisplay/SongGrid.js';
 
@@ -9,19 +8,11 @@ export function createFilterButton(label, category) {
   button.setAttribute('uinavable', '');
   button.setAttribute('data-category', category);
   
-  button.innerHTML = `
-    <span>${label}</span>
-    <span class="filter-arrow">▶</span>
-  `;
+  button.textContent = label;
   
-  // Add click handler
   button.addEventListener('click', () => {
     actions.toggleCategoryFilter(category);
-    
-    // Update filter buttons visual state
     updateFilterButtonsState();
-    
-    // Re-render the song grid with new filters
     renderSongGrid();
   });
   

@@ -1,56 +1,40 @@
-
-// src/renderer/modules/screens/homeComponents/filters/FilterSection.js - Filter section
 import { store, actions } from '../state.js';
 import { createFilterButton } from './FilterButton.js';
 import { createFilterDropdown } from './FilterDropdown.js';
 import { renderSongGrid } from '../songDisplay/SongGrid.js';
 
 export function setupFilterSection(container) {
-  // Create filter header
+  // Use simple header
   const filterHeader = document.createElement('div');
   filterHeader.className = 'filter-header';
-  filterHeader.innerHTML = `
-    <h2>All Songs</h2>
-    <div class="filter-controls"></div>
-  `;
-  
+  filterHeader.innerHTML = `<h2>All Songs</h2>`;
   container.appendChild(filterHeader);
-  
-  // Add filter dropdowns
-  const filterControls = filterHeader.querySelector('.filter-controls');
-  
-  const sortingDropdown = createFilterDropdown('Sorting: by product', 'sorting');
-  const orderDropdown = createFilterDropdown('Order: owned songs first', 'order');
-  
-  filterControls.appendChild(sortingDropdown);
-  filterControls.appendChild(orderDropdown);
-  
-  // Create category filters container
+
+  // Category filters
   const categoryFilters = document.createElement('div');
   categoryFilters.className = 'category-filters';
   container.appendChild(categoryFilters);
   
-  // Set up category filters
   const filterCategories = [
-    { label: "CHOREO STYLES", category: "choreo" },
-    { label: "MUSIC GENRES", category: "genre" },
-    { label: "MOODS", category: "mood" },
-    { label: "DECADES", category: "decade" },
-    { label: "ACCESSIBILITY", category: "accessibility" }
+    { label: "Party", category: "party" },
+    { label: "Fitness", category: "fitness" },
+    { label: "Extremes", category: "extreme" },
+    { label: "K-Pop", category: "kpop" },
+    { label: "Classics", category: "classic" }
   ];
   
   filterCategories.forEach(filter => {
     const button = createFilterButton(filter.label, filter.category);
     categoryFilters.appendChild(button);
   });
-  
-  // Create songs grid container
+
+  // Song Grid
   const songsGrid = document.createElement('div');
   songsGrid.className = 'songs-grid';
   container.appendChild(songsGrid);
   
-  // Create reset filters button
-  const resetButton = document.createElement('button');
+  // "Reset" button (Small link style)
+  const resetButton = document.createElement('div');
   resetButton.className = 'reset-filters-button';
   resetButton.setAttribute('uinavable', '');
   resetButton.textContent = 'RESET FILTERS';

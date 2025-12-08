@@ -1,318 +1,293 @@
+:root {
+    --jd-primary: #6542fe;
+    --jd-secondary: #c902d6;
+}
+
 #HomeScreen {
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    color: white;
+    font-family: "Font1", "Segoe UI", sans-serif;
+    font-size: 0.11em; 
+    display: grid;
+    grid-template-columns: 5em 1fr;
+    grid-template-rows: 5em 1fr;
+    grid-template-areas: 
+        "sidebar header"
+        "sidebar content";
+        z-index: 2;
+        position: relative;
+}
+
+#HomeScreen .profile-section.focused {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    transform: scale(1.05);
+    box-shadow: 0 0 1em rgba(255, 255, 255, 0.3);
+    z-index: 95;
+}
+
+#HomeScreen .filter-controls {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+#HomeScreen .filter-dropdown {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.5em 1em;
+    border-radius: 0.5em;
+    font-weight: 700;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    transition: all 0.2s;
+}
+
+#HomeScreen .filter-dropdown.focused {
+    background: white;
+    color: black;
+    transform: scale(1.05);
+    box-shadow: 0 0 1em rgba(255, 255, 255, 0.5);
+}
+
+#HomeScreen .playlist-item.focused,
+#HomeScreen .setting-item.focused {
+    background: rgba(255, 255, 255, 0.9);
+    color: black;
+    transform: scale(1.02);
+    box-shadow: 0 0.2em 1em rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+#HomeScreen [uinavable].focused:not(.nav-item):not(.song-tile):not(.song-grid-item):not(.filter-button):not(.surprise-button):not(.profile-section):not(.filter-dropdown) {
+    outline: 0.2em solid white;
+    transform: scale(1.05);
+    box-shadow: 0 0 1em rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+#HomeScreen .nav-sidebar {
+    grid-area: sidebar;
     display: flex;
     flex-direction: column;
-    color: white;
-    overflow: hidden;
-    position: relative;
+    align-items: center;
+    padding-top: 2em;
+    gap: 1.5em;
+    z-index: 100;
+    border-right: 1px solid rgba(255,255,255,0.05);
 }
+
+#HomeScreen .nav-item {
+    width: 3.5em;
+    height: 3.5em;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    flex-shrink: 0;
+}
+
+#HomeScreen .nav-item img {
+    width: 1.8em;
+    height: 1.8em;
+    object-fit: contain;
+}
+
+#HomeScreen .nav-item.active {
+    background: #6542fe;
+    box-shadow: 0 0 1.5em rgba(101, 66, 254, 0.6);
+}
+
+#HomeScreen .nav-item.focused {
+    background: white;
+    transform: scale(1.15);
+    z-index: 10;
+}
+#HomeScreen .nav-item.focused img { filter: invert(1); }
 
 #HomeScreen .home-header {
+    grid-area: header;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    padding: 0.083em 0.167em;
-    /* 10px/120, 20px/120 */
-    height: 0.5em;
-    /* 60px/120 */
-}
-
-#HomeScreen .home-logo {
-    height: 0.333em;
-    /* 40px/120 */
+    padding: 0 3em;
+    z-index: 90;
 }
 
 #HomeScreen .profile-section {
     display: flex;
+    flex-direction: row-reverse;
     align-items: center;
-    gap: 0.083em;
-    /* 10px/120 */
-}
-
-#HomeScreen .player-name {
-    font-size: 0.1em;
-    /* 12px/120 */
-    font-weight: 600;
+    gap: 1em;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.4em 0.4em 0.4em 1.5em;
+    border-radius: 4em;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 #HomeScreen .avatar {
-    width: 0.366em;
-    /* 40px/120 × 1.1 */
-    height: 0.366em;
-    /* 40px/120 × 1.1 */
-    background-color: #ff5eb5;
+    width: 3em;
+    height: 3em;
+    background: #ff00cc;
     border-radius: 50%;
-    cursor: pointer;
+    border: 0.2em solid white;
 }
 
-#HomeScreen .avatar.focused {
-    box-shadow: 0 0 0 0.025em rgba(255, 255, 255, 0.8);
-}
-
-#HomeScreen .nav-sidebar {
-    position: absolute;
-    left: 0;
-    top: 0.667em;
-    /* 80px/120 */
-    bottom: 0;
-    width: 0.667em;
-    /* 80px/120 */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 1em;
-    /* 20px/120 */
-    z-index: 10;
-}
-
-#HomeScreen .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 0.55em;
-    /* 60px/120 × 1.1 */
-    height: 0.55em;
-    /* 60px/120 × 1.1 */
-    margin-bottom: 0.091em;
-    /* 10px/120 × 1.1 */
-    border-radius: 0.11em;
-    /* 12px/120 × 1.1 */
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#HomeScreen .nav-item:hover,
-#HomeScreen .nav-item.active {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-#HomeScreen .nav-item.focused {
-    background-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 0.046em rgba(255, 255, 255, 0.8);
-}
-
-#HomeScreen .nav-item img {
-    width: 0.22em;
-    /* 24px/120 × 1.1 */
-    height: 0.22em;
-    /* 24px/120 × 1.1 */
-    margin-bottom: 0.036em;
-    /* 4px/120 × 1.1 */
-}
-
-#HomeScreen .nav-item span {
-    font-size: 0.11em;
-    text-align: center;
-}
-
-#HomeScreen .controller-button {
-    margin-top: auto;
-    margin-bottom: 0.167em;
-    /* 20px/120 */
-    background-color: rgba(0, 0, 0, 0.3);
+#HomeScreen .player-name {
+    font-size: 1.2em;
+    font-weight: 800;
+    text-transform: uppercase;
 }
 
 #HomeScreen .home-content {
-    margin-left: 0.667em;
-    /* 80px/120 */
-    padding: 0.083em 0.167em;
-    /* 10px/120, 20px/120 */
-    height: calc(100% - 0.5em);
-    /* 100% - 60px/120 */
-    overflow-y: auto;
+    grid-area: content;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding: 0 3em 3em 3em;
     display: flex;
     flex-direction: column;
-    gap: 0.167em;
-    /* 20px/120 */
+    gap: 2.5em;
+    scrollbar-width: none;
 }
+#HomeScreen .home-content::-webkit-scrollbar { display: none; }
 
 #HomeScreen .song-spinner {
+    width: 100%;
+    min-height: 10em;
+    background: linear-gradient(90deg, #9c1553 0%, #e63925 100%);
+    border-radius: 1em;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    background: linear-gradient(90deg, #a239ca 0%, #4717f6 100%);
-    border-radius: 0.133em;
-    /* 16px/120 */
-    padding: 0.083em 0.167em;
-    /* 10px/120, 20px/120 */
-    margin-bottom: 0.083em;
-    /* 10px/120 */
+    justify-content: space-between;
+    padding: 0 3em;
+    box-shadow: 0 1em 2em rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
 }
 
 #HomeScreen .spinner-content {
     display: flex;
     align-items: center;
-    gap: 0.083em;
-    /* 10px/120 */
+    gap: 2em;
+    z-index: 2;
+    flex: 1;
 }
 
 #HomeScreen .spin-icon {
-    width: 0.3em;
-    /* 36px/120 */
-    height: 0.3em;
-    /* 36px/120 */
-    animation: spin 8s linear infinite;
+    width: 5em;
+    height: 5em;
+    animation: spin 10s linear infinite;
+    flex-shrink: 0;
 }
 
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+#HomeScreen .spinner-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 #HomeScreen .spinner-text h3 {
-    font-size: 0.17em;
-    margin: 0 0 0.025em 0;
+    font-size: 2em;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.1;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 #HomeScreen .spinner-text p {
-    font-size: 0.12em;
-    margin: 0;
-    opacity: 0.8;
+    font-size: 1em;
+    margin: 0.5em 0 0 0;
+    opacity: 0.9;
 }
 
 #HomeScreen .surprise-button {
-    background-color: #e91e63;
-    color: white;
+    font-size: 1.2em;
+    padding: 0.8em 1.5em;
+    background: white;
+    color: #d4143d;
+    border-radius: 2em;
+    font-weight: 900;
+    text-transform: uppercase;
+    box-shadow: 0 0.5em 1em rgba(0,0,0,0.2);
     border: none;
-    border-radius: 0.275em;
-    padding: 0.074em 0.184em;
-    font-size: 0.1em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 0.036em 0.074em rgba(0, 0, 0, 0.3);
-    padding: 0.8em;
-}
-
-#HomeScreen .surprise-button:hover {
-    background-color: #ff4081;
-}
-
-#HomeScreen .surprise-button.focused {
-    background-color: #ff4081;
-    box-shadow: 0 0 0.046em 0.028em rgba(255, 255, 255, 0.8);
-}
-
-#HomeScreen .songs-carousel {
-    margin-bottom: 0.083em;
-}
-
-#HomeScreen .carousel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.083em;
-}
-
-#HomeScreen .carousel-header h2 {
-    font-size: 0.158em;
-    margin: 0;
-}
-
-#HomeScreen .carousel-controls {
-    display: flex;
-    gap: 0.046em;
-}
-
-#HomeScreen .carousel-arrow {
-    width: 0.33em;
-    height: 0.33em;
-    border-radius: 50%;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 0.11em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#HomeScreen .carousel-arrow:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-#HomeScreen .carousel-arrow.focused {
-    background-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 0 0.046em rgba(255, 255, 255, 0.8);
+    z-index: 5;
+    white-space: nowrap;
 }
 
 #HomeScreen .carousel-items {
     display: flex;
-    gap: 0.125em;
-    overflow-x: auto;
-    padding: 0.083em;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    gap: 1.5em;
+    padding: 0.5em;
+    overflow-x: visible;
 }
 
-#HomeScreen .carousel-items::-webkit-scrollbar {
-    height: 0.067em;
+#HomeScreen .songs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+    gap: 1.5em;
+    padding-bottom: 2em;
 }
 
-#HomeScreen .carousel-items::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#HomeScreen .carousel-items::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 0.067em;
+#HomeScreen .song-tile,
+#HomeScreen .song-grid-item {
+    position: relative;
+    border-radius: 0.6em;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    box-shadow: 0 0.5em 1.5em rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 #HomeScreen .song-tile {
-    flex: 0 0 2.083em;
-    border-radius: 0.1em;
-    overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.2s ease;
+    width: 20em; 
+    flex-shrink: 0;
 }
 
-#HomeScreen .song-tile:hover {
-    transform: translateY(-0.042em);
-}
-
-#HomeScreen .song-tile.focused {
-    box-shadow: 0 0 0.083em rgba(255, 255, 255, 0.8);
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-#HomeScreen .song-tile .song-cover {
+#HomeScreen .song-cover {
     width: 100%;
-    height: 1.167em;
-    object-fit: cover;
-}
-
-#HomeScreen .song-grid-item .song-cover {
     height: 100%;
-    width: 30%;
+    object-fit: cover;
+    display: block;
 }
 
-#HomeScreen .song-tile .song-info {
-    padding: 0.083em;
+#HomeScreen .song-info,
+#HomeScreen .song-grid-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(10,5,20,0.95) 15%, rgba(10,5,20,0.6) 60%, transparent 100%);
+    padding: 3em 1em 0.8em 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
-#HomeScreen .song-tile .song-title {
-    font-size: 0.092em;
-    margin: 0 0 0.025em 0;
+#HomeScreen .song-title {
+    font-size: 1.2em;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin: 0 0 0.2em 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
-
-#HomeScreen .song-tile .song-subtitle {
-    font-size: 0.075em;
-    margin: 0 0 0.042em 0;
-    opacity: 0.8;
+#HomeScreen .song-subtitle {
+    font-size: 0.9em;
+    color: rgba(255,255,255,0.8);
+    margin: 0 0 0.4em 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -320,200 +295,66 @@
 
 #HomeScreen .difficulty-bars {
     display: flex;
-    gap: 0.017em;
+    gap: 0.3em;
+    height: 0.4em;
+    align-items: center;
 }
 
 #HomeScreen .bar {
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 0.1em;
+    width: 1.2em;
+    height: 0.3em;
+    background: rgba(255,255,255,0.3);
+    border-radius: 0.1em;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 #HomeScreen .bar.filled {
-    color: #ffc107;
+    background: #ffdb0d;
+    box-shadow: 0 0 0.4em rgba(255, 219, 13, 0.6);
 }
 
-#HomeScreen .filter-section {
-    margin-top: 0.167em;
+#HomeScreen .song-tile.focused,
+#HomeScreen .song-grid-item.focused {
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: 0 0 0 0.25em white, 0 1em 3em rgba(0,0,0,0.7);
 }
 
+#HomeScreen h2,
+#HomeScreen .carousel-header h2,
 #HomeScreen .filter-header h2 {
-    font-size: 0.155em;
-    margin: 0;
-}
-
-#HomeScreen .filter-header h2 {
-    font-size: 0.125em;
-    margin: 0;
-}
-
-#HomeScreen .filter-controls {
-    display: flex;
-    gap: 0.083em;
-}
-
-#HomeScreen .filter-dropdown {
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 0.067em;
-    padding: 0.4em;
-    display: flex;
-    align-items: center;
-    gap: 0.042em;
-    cursor: pointer;
-    font-size: 0.1em;
-    position: relative;
-    display: block;
-    height: 2em;
-}
-
-#HomeScreen .filter-dropdown.focused {
-    background-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0.042em rgba(255, 255, 255, 0.8);
-}
-
-#HomeScreen .dropdown-arrow {
-    font-size: 0.067em;
-    opacity: 0.7;
+    font-size: 1.6em;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 0.5em;
+    padding-left: 0.2em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 #HomeScreen .category-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.083em;
-    margin-bottom: 0.125em;
+    gap: 0.6em;
+    margin-bottom: 1.5em;
 }
 
 #HomeScreen .filter-button {
-    background-color: rgba(0, 0, 0, 0.3);
+    padding: 1.1em 1.5em;
+    background: rgba(255,255,255,0.1);
     border: none;
-    border-radius: 0.067em;
+    border-radius: 0.3em;
     color: white;
-    padding: 1em 2em;
-    font-size: 0.075em;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    /* gap: 0.042em; */
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 3em;
-}
-
-#HomeScreen .filter-button:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 700;
+    font-size: 1em;
+    margin: 0;
+    text-transform: uppercase;
 }
 
 #HomeScreen .filter-button.focused {
-    background-color: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-    box-shadow: 0 0 0.042em rgba(255, 255, 255, 0.8);
+    background: #620069;
 }
 
-#HomeScreen .filter-arrow {
-    font-size: 1em;
-    opacity: 0.7;
-    position: absolute;
-    top: 0.87em;
-    left: 0.6em;
-}
-
-#HomeScreen .songs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(2.5em, 1fr));
-    gap: 0.125em;
-    margin-bottom: 0.167em;
-}
-
-#HomeScreen .song-grid-item {
-    display: flex;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 0.1em;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#HomeScreen .song-grid-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-0.017em);
-}
-
-#HomeScreen .song-grid-item.focused {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-0.017em);
-    box-shadow: 0 0 0.058em rgba(255, 255, 255, 0.8);
-}
-
-#HomeScreen .song-tile .song-cover {
-    width: 100%;
-    /* height: 1.167em; */
-    object-fit: cover;
-    height: auto;
-    aspect-ratio: 1/1;
-}
-
-#HomeScreen .song-grid-item .song-grid-info {
-    flex: 1;
-    padding: 0.042em 0.083em;
-}
-
-#HomeScreen .song-grid-item .song-title {
-    font-size: 0.16em;
-    margin: 0 0 0.017em 0;
-}
-
-#HomeScreen .song-tile .song-subtitle {
-    font-size: 0.12em;
-    margin: 0 0 0.042em 0;
-    opacity: 0.8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#HomeScreen .song-grid-item .song-subtitle {
-    font-size: 0.11em;
-    padding: 0;
-    margin: 0;
-}
-
-#HomeScreen .song-grid-item .difficulty-bars {
-    margin-right: 0.083em;
-}
-
-#HomeScreen .song-grid-item .bar {
-    font-size: 0.083em;
-}
-
-#HomeScreen .reset-filters-button {
-    display: block;
-    margin: 0 auto 0.167em;
-    background-color: transparent;
-    border: 0.017em solid rgba(255, 255, 255, 0.5);
-    border-radius: 0.067em;
-    color: rgba(255, 255, 255, 0.8);
-    padding: 0.058em 0.167em;
-    font-size: 0.075em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#HomeScreen .reset-filters-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: white;
-    color: white;
-}
-
-#HomeScreen .reset-filters-button.focused {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-color: white;
-    color: white;
-    box-shadow: 0 0 0.042em rgba(255, 255, 255, 0.8);
-}
-
-#HomeScreen .playlist-content, #HomeScreen .settings-content {
-    flex-direction: column;
-    font-size: 0.1em;
-    margin-left: 1em;
+#HomeScreen .filter-button.active {
+    background: #c902d6;
+    box-shadow: 0 0 1em #c902d6;
 }
