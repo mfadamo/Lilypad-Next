@@ -120,7 +120,7 @@ export default class HudController {
             Moves3: this.gamevar.isCamera ? (this.songData['moves3-kinect'] || this.songData.moves3) || [] : this.songData.moves3 || [],
             Moves4: this.gamevar.isCamera ? (this.songData['moves4-kinect'] || this.songData.moves4) || [] : this.songData.moves4 || [],
             Moves5: this.gamevar.isCamera ? (this.songData['moves5-kinect'] || this.songData.moves5) || [] : this.songData.moves5 || [],
-            HideUI: this.songData.HideUserInterface || this.songData.HideUI || [],
+            HideUI: this.songData.hideUserInterface || this.songData.HideUI || [],
             isUbiartConverted: this.songData.ubiartConverted,
             playerScore: { player1: 0, player2: 0, player3: 0, player4: 0, player5: 0, player6: 0 },
             modelsBuffer: this.gamevar.isCamera ? this.gesture || this.msm || [] : this.msm || []
